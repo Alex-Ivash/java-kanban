@@ -3,11 +3,12 @@ package model;
 import java.util.Objects;
 
 public class Task {
-    protected int id;
+    protected Integer id;
+
     protected Status status;
+
     protected String name;
     protected String description;
-
 
     public Task(Status status, String name, String description) {
         this.status = status;
@@ -32,6 +33,10 @@ public class Task {
         return status;
     }
 
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
     public String getName() {
         return name;
     }
@@ -53,8 +58,8 @@ public class Task {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + "{");
         sb.append("id=").append(id);
         sb.append(", status=").append(status);
-        sb.append(", name='").append(name);
-        sb.append(", description='").append(description);
+        sb.append(", name='").append(name).append("'");
+        sb.append(", description='").append(description).append("'");
         sb.append('}');
         return sb.toString();
     }
@@ -64,7 +69,7 @@ public class Task {
         if (this == otherTask) return true;
         if (otherTask.getClass() != getClass()) return false;
         Task task = (Task) otherTask;
-        return id == task.id;
+        return id.equals(task.id);
     }
 
     @Override
