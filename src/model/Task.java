@@ -62,7 +62,8 @@ public class Task {
         sb.append(", description='").append(description).append("'");
         sb.append('}');
         return sb.toString();
-    }
+    } // это IDEA сгенерила, я лишь немного модифицировал и сделал универсальным, чтобы можно было в потомках вызвать
+      // не прописывая лишний раз те же самые поля и имя класса руками
 
     @Override
     public boolean equals(Object otherTask) {

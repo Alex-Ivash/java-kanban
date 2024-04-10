@@ -4,27 +4,27 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Epic extends Task {
-    private final Set<Integer> subtasks;
+    private final Set<Integer> subtasksIds;
 
     public Epic(String name, String description) {
         super(name, description);
-        this.subtasks = new HashSet<>();
+        this.subtasksIds = new HashSet<>();
     }
 
     public void addSubtask(int subtaskId) {
-        subtasks.add(subtaskId);
+        subtasksIds.add(subtaskId);
     }
 
     public void removeSubtask(int subtaskId) {
-        subtasks.remove(subtaskId);
+        subtasksIds.remove(subtaskId);
     }
 
-    public Set<Integer> getSubtasks() {
-        return subtasks;
+    public Set<Integer> getSubtasksIds() {
+        return subtasksIds;
     }
 
     @Override
     public String toString() {
-        return super.toString().replaceFirst("}$", ", subtasks=" + subtasks + "}");
+        return super.toString().replaceFirst("}$", ", subtasks=" + subtasksIds + "}");
     }
 }

@@ -3,25 +3,25 @@ package model;
 import java.util.Objects;
 
 public class Subtask extends Task {
-    private Integer epic;
+    private Integer epicId;
 
-    public Subtask(Status status, String name, String description, Integer epic) {
+    public Subtask(Status status, String name, String description, Integer epicId) {
         super(status, name, description);
-        this.epic = Objects.requireNonNull(epic);
+        this.epicId = Objects.requireNonNull(epicId);
     }
 
-    public int getEpic() {
-        return epic;
+    public int getEpicId() {
+        return epicId;
     }
 
-    public void setEpic(int epic) {
-        this.epic = epic;
+    public void setEpicId(int epicId) {
+        this.epicId = epicId;
     } // у нас объект сабтаска целиком должен заменяться, так что этот метод не используется, но на всякий оставил.
 
     // К тому же, реализовал возможность задать эпик для сабтаска в конструкторе
 
     @Override
     public String toString() {
-        return super.toString().replaceFirst("}$", ", epic=" + epic + "}");
+        return super.toString().replaceFirst("}$", ", epic=" + epicId + "}");
     }
 }
