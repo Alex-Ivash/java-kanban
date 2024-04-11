@@ -68,7 +68,9 @@ public class TaskManager {
 
 
     public Task createTask(Task newTask) {
-        if (newTask == null) return null;
+        if (newTask == null) {
+            return null;
+        }
 
         newTask.setId(getNextId());
         tasks.put(newTask.getId(), newTask);
@@ -77,7 +79,9 @@ public class TaskManager {
     }
 
     public Subtask createSubtask(Subtask newSubtask) {
-        if (newSubtask == null) return null;
+        if (newSubtask == null) {
+            return null;
+        }
 
         newSubtask.setId(getNextId());
 
@@ -91,7 +95,9 @@ public class TaskManager {
     }
 
     public Epic createEpic(Epic newEpic) {
-        if (newEpic == null) return null;
+        if (newEpic == null) {
+            return null;
+        }
 
         newEpic.setId(getNextId());
         epics.put(newEpic.getId(), newEpic);
@@ -102,7 +108,9 @@ public class TaskManager {
 
 
     public Task updateTask(Task newTask) {
-        if (newTask == null) return null;
+        if (newTask == null) {
+            return null;
+        }
 
         tasks.put(newTask.getId(), newTask);
 
@@ -110,7 +118,9 @@ public class TaskManager {
     }
 
     public Subtask updateSubtask(Subtask newSubtask) {
-        if (newSubtask == null) return null;
+        if (newSubtask == null) {
+            return null;
+        }
 
         int id = newSubtask.getId();
         Subtask oldSubtask = subtasks.get(id);
@@ -130,7 +140,9 @@ public class TaskManager {
     }
 
     public Epic updateEpic(Epic newEpic) {
-        if (newEpic == null) return null;
+        if (newEpic == null) {
+            return null;
+        }
 
         Epic oldEpic = epics.get(newEpic.getId());
 
@@ -148,7 +160,9 @@ public class TaskManager {
     public void removeSubtask(int id) {
         Subtask subtask = subtasks.get(id);
 
-        if (subtask == null) return;
+        if (subtask == null) {
+            return;
+        }
 
         Epic subtaskEpic = epics.get(subtask.getEpicId());
 
@@ -160,7 +174,9 @@ public class TaskManager {
     public void removeEpic(int id) {
         Epic epic = epics.get(id);
 
-        if (epic == null) return;
+        if (epic == null) {
+            return;
+        }
 
         epic.getSubtasksIds().forEach(subtasks::remove);
         epics.remove(id);
