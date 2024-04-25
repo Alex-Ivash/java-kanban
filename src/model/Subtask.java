@@ -16,9 +16,7 @@ public class Subtask extends Task {
 
     public void setEpicId(int epicId) {
         this.epicId = epicId;
-    } // у нас объект сабтаска целиком должен заменяться, так что этот метод не используется, но на всякий оставил.
-
-    // К тому же, реализовал возможность задать эпик для сабтаска в конструкторе
+    }
 
     @Override
     public String toString() {

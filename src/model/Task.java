@@ -19,7 +19,7 @@ public class Task {
     public Task(String name, String description) {
         this.name = name;
         this.description = description;
-    } // конструктор для эпика, с целью расчета статуса самим эпиком, без возможности его задать на этапе конструирования(по ТЗ)
+    }
 
     public int getId() {
         return id;
@@ -62,8 +62,7 @@ public class Task {
         sb.append(", description='").append(description).append("'");
         sb.append('}');
         return sb.toString();
-    } // это IDEA сгенерила, я лишь немного модифицировал и сделал универсальным, чтобы можно было в потомках вызвать
-      // не прописывая лишний раз те же самые поля и имя класса руками
+    }
 
     @Override
     public boolean equals(Object otherTask) {
