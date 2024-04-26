@@ -1,4 +1,4 @@
-package service;
+package service.managers.task;
 
 import model.Epic;
 import model.Status;
@@ -7,6 +7,7 @@ import model.Task;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import service.managers.Managers;
 
 import java.util.List;
 import java.util.Set;
@@ -35,7 +36,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("При удалении всех подзадач очищаются и подзадачи всех эпиков")
-    void removeAllSubTasks() {
+    void removeAllSubTasks_allSubtasksFromManagerAndEpicsAreDeleted() {
         taskManager.removeAllSubTasks();
 
         taskManager.getAllEpics()
@@ -45,7 +46,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("При удалении всех эпиков удаляются и все подзадачи")
-    void removeAllEpics() {
+    void removeAllEpics_allEpicsAndAllTheirSubtasksAreDeleted() {
         taskManager.removeAllEpics();
 
         assertTrue(taskManager.getAllSubTasks().isEmpty(), "Удаляются не все подзадачи");
@@ -54,7 +55,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Задача добавляется и может быть найдена по id")
-    void shouldTaskCreatedAndCanBeFoundById() {
+    void createTask_getTask_shouldTaskCreatedAndCanBeFoundById() {
         Task task = new Task(Status.NEW, "Test addNewTask", "Test addNewTask description");
         int taskId = taskManager.createTask(task).getId();
         Task savedTask = taskManager.getTask(taskId);
@@ -71,7 +72,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Подзадача добавляется и может быть найдена по id")
-    void shouldSubtaskCreatedAndCanBeFoundById() {
+    void createSubtask_getSubtask_shouldSubtaskCreatedAndCanBeFoundById() {
         Subtask subtask = new Subtask(Status.NEW, "Test addNewTask", "Test addNewTask description", 3);
         int subtaskId = taskManager.createSubtask(subtask).getId();
         Subtask savedSubtask = taskManager.getSubtask(subtaskId);
@@ -88,7 +89,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Эпик добавляется и может быть найден по id")
-    void shouldEpicCreatedAndCanBeFoundById() {
+    void createEpic_getEpic_shouldEpicCreatedAndCanBeFoundById() {
         Epic epic = new Epic("Test addNewTask", "Test addNewTask description");
         int epicId = taskManager.createEpic(epic).getId();
         Epic savedEpic = taskManager.getEpic(epicId);
@@ -105,42 +106,45 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Можно обновить конкретную задачу")
-    void updateTask() {
+    void updateTask_taskUpdatedBasedOnTheObjectFieldsInTheArgument() {
         Task task = new Task(Status.IN_PROGRESS, "Test addNewTask", "Test addNewTask description");
         task.setId(0);
         Task savedTask = taskManager.updateTask(task);
 
-        assertEquals(savedTask.getStatus(), task.getStatus(), "Статусы не обновляются");
-        assertEquals(savedTask.getName(), task.getName(), "Имена не обновляются");
-        assertEquals(savedTask.getDescription(), task.getDescription(), "Описания не обновляются");
+        assertEquals(savedTask.getStatus(), task.getStatus(), "Статус не обновляется");
+        assertEquals(savedTask.getName(), task.getName(), "Имя не обновляется");
+        assertEquals(savedTask.getDescription(), task.getDescription(), "Описание не обновляется");
     }
 
     @Test
     @DisplayName("Можно обновить конкретную подзадачу")
-    void updateSubtask() {
-        Subtask subtask = new Subtask(Status.DONE, "Test addNewTask", "Test addNewTask description", 4);
+    void updateSubtask_subtaskUpdatedBasedOnTheObjectFieldsInTheArgument() {
+        Subtask subtask = new Subtask(Status.DONE, "Test addNewTask", "Test addNewTask description", 3);
         subtask.setId(7);
         Subtask savedSubtask = taskManager.updateSubtask(subtask);
 
-        assertEquals(savedSubtask.getStatus(), subtask.getStatus(), "Статусы не обновляются");
-        assertEquals(savedSubtask.getName(), subtask.getName(), "Имена не обновляются");
-        assertEquals(savedSubtask.getDescription(), subtask.getDescription(), "Описания не обновляются");
+        assertEquals(savedSubtask.getStatus(), subtask.getStatus(), "Статус не обновляется");
+        assertEquals(savedSubtask.getName(), subtask.getName(), "Имя не обновляется");
+        assertEquals(savedSubtask.getDescription(), subtask.getDescription(), "Описание не обновляется");
+        assertEquals(savedSubtask.getEpicId(), subtask.getEpicId(), "Принадлежность к эпику не обновляется");
     }
 
     @Test
-    @DisplayName("Можно обновить конкретный эпик")
-    void updateEpic() {
+    @DisplayName("При обновлении эпика обновляются только имя и описание")
+    void updateEpic_onlyNameAndDescriptionAreUpdated() {
         Epic epic = new Epic("Test addNewTask", "Test addNewTask description");
         epic.setId(3);
         Epic savedEpic = taskManager.updateEpic(epic);
 
-        assertEquals(savedEpic.getName(), epic.getName(), "Имена не обновляются");
-        assertEquals(savedEpic.getDescription(), epic.getDescription(), "Описания не обновляются");
+        assertNotEquals(savedEpic.getStatus(), epic.getStatus(), "Статус обновился, не должен!");
+        assertEquals(savedEpic.getName(), epic.getName(), "Имя не обновляется");
+        assertEquals(savedEpic.getDescription(), epic.getDescription(), "Описание не обновляется");
+        assertNotEquals(savedEpic.getSubtasksIds().size(), epic.getSubtasksIds().size(), "Коллекция подзадач обновилась, не должна!");
     }
 
     @Test
     @DisplayName("Задачу можно удалить")
-    void removeTask() {
+    void removeTask_taskRemovedFromManager() {
         taskManager.removeTask(0);
 
         assertNull(taskManager.getTask(0), "Задача не удалена из менеджера");
@@ -148,7 +152,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("При удалении подзадачи она удаляется также и из своего эпика")
-    void removeSubtask() {
+    void removeSubtask_subtaskRemovedFromManagerAndFromItsEpic() {
         Subtask savedSubtask = taskManager.getSubtask(5);
         int savedSubtaskEpicId = savedSubtask.getEpicId();
 
@@ -160,7 +164,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("При удалении эпика удаляются также и все его подзадачи")
-    void removeEpic() {
+    void removeEpic_epicRemovedFromManagerAndAllEpicSubtasksAreRemovedFromManager() {
         Set<Integer> savedEpicSubtasksIds = taskManager.getEpic(3).getSubtasksIds();
 
         taskManager.removeEpic(3);
@@ -172,7 +176,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("История содержит только просмотренные задачи в порядке просмотра")
-    void getHistory() {
+    void getHistory_historyContainsOnlyViewedTasksAreInTheOrderOfViewing() {
         assertTrue(taskManager.getHistory().isEmpty(), "История не пуста при отсутствии просмотров");
 
         Task viewedTask = taskManager.getTask(0);
@@ -181,31 +185,37 @@ class InMemoryTaskManagerTest {
 
         List<Task> history = taskManager.getHistory();
 
-        assertEquals(3, history.size(), "Размер истории не совпадает с просмотрами");
+        assertEquals(3, history.size(), "Размер истории не совпадает с кол-вом просмотров");
         assertEquals(0, history.indexOf(viewedTask), "Порядок просмотра не совпадает с историей");
         assertEquals(1, history.indexOf(viewedEpic), "Порядок просмотра не совпадает с историей");
         assertEquals(2, history.indexOf(viewedSubtask), "Порядок просмотра не совпадает с историей");
     }
 
     @Test
-    @DisplayName("Cтатус эпика рассчитывается на основе статусов его подзадач")
-    void epicStatusCalculatedBasedOnSubtasks() {
+    @DisplayName("Cтатус эпика NEW рассчитывается на основе статусов его подзадач")
+    void calculateEpicStatus_shouldBeNEW_emptyEpicOrAllSubtasksInStatusNEW() {
         Epic epic = taskManager.createEpic(new Epic("name", "desr"));
         assertEquals(Status.NEW, epic.getStatus(), "Пустой эпик имеет статус, отличный от NEW");
 
         taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
         taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
         assertEquals(Status.NEW, epic.getStatus(), "Эпик со всеми подзадачами в статусе NEW имеет статус, отличный от NEW");
+    }
 
-        taskManager.removeSubtask(9);
-        taskManager.removeSubtask(10);
+    @Test
+    @DisplayName("Cтатус эпика DONE рассчитывается на основе статусов его подзадач")
+    void calculateEpicStatus_shouldBeDONE_allSubtasksInStatusDONE() {
+        Epic epic = taskManager.createEpic(new Epic("name", "desr"));
 
         taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
         taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
         assertEquals(Status.DONE, epic.getStatus(), "Эпик со всеми подзадачами в статусе DONE имеет статус, отличный от DONE");
+    }
 
-        taskManager.removeSubtask(11);
-        taskManager.removeSubtask(12);
+    @Test
+    @DisplayName("Cтатус эпика IN_PROGRESS рассчитывается на основе статусов его подзадач")
+    void calculateEpicStatus_shouldBeIN_PROGRESS_allSubtasksInStatusIN_PROGRESSOrDONEandNEWorIN_PROGRESSandNEWorIN_PROGRESSandDONE() {
+        Epic epic = taskManager.createEpic(new Epic("name", "desr"));
 
         taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
         taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
@@ -235,7 +245,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Состояние добавленной задачи не отличается от состояния добавляемой в менеджер")
-    void stateBeforeAndAfterCreateTaskShouldBeSame() {
+    void createTask_stateBeforeAndAfterCreateTaskShouldBeSame() {
         Task task = new Task(Status.NEW, "name", "descr");
         Status taskStatus = task.getStatus();
         String taskName = task.getName();
@@ -250,7 +260,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Состояние добавленной подзадачи не отличается от состояния добавляемой в менеджер")
-    void stateBeforeAndAfterCreateSubtaskShouldBeSame() {
+    void createSubtask_stateBeforeAndAfterCreateSubtaskShouldBeSame() {
         Subtask subtask = new Subtask(Status.NEW, "name", "descr", 3);
         Status subtaskStatus = subtask.getStatus();
         String subtaskName = subtask.getName();
@@ -267,7 +277,7 @@ class InMemoryTaskManagerTest {
 
     @Test
     @DisplayName("Состояние добавленного эпика не отличается от состояния добавляемого в менеджер")
-    void stateBeforeAndAfterCreateEpicShouldBeSame() {
+    void createEpic_stateBeforeAndAfterCreateEpicShouldBeSame() {
         Epic epic = new Epic("name", "descr");
         String epicName = epic.getName();
         String epicDescription = epic.getDescription();

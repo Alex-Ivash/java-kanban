@@ -1,9 +1,10 @@
-package service;
+package service.managers.task;
 
 import model.Epic;
 import model.Status;
 import model.Subtask;
 import model.Task;
+import service.managers.history.HistoryManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -174,7 +175,7 @@ public class InMemoryTaskManager implements TaskManager {
         oldEpic.setName(newEpic.getName());
         oldEpic.setDescription(newEpic.getDescription());
 
-        return newEpic;
+        return oldEpic;
     }
 
 

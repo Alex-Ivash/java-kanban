@@ -1,4 +1,4 @@
-package service;
+package service.managers.history;
 
 import model.Task;
 
@@ -15,7 +15,9 @@ public class InMemoryHistoryManager implements HistoryManager {
 
     @Override
     public void add(Task task) {
-        if (task == null) return;
+        if (task == null) {
+            return;
+        }
 
         if (history.size() == MAXIMUM_CAPACITY) {
             history.removeFirst();

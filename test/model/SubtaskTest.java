@@ -9,7 +9,7 @@ class SubtaskTest {
 
     @Test
     @DisplayName("Экземпляры класса равны друг другу, если равен их id")
-    void shouldEqualsWithIdenticalIDs() {
+    void equals_shouldEqualsWithIdenticalIDs() {
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
         Subtask subtaskExpected = new Subtask(Status.NEW, "name", "description", 0);
 

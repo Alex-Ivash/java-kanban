@@ -1,4 +1,4 @@
-package service;
+package service.managers;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,7 +10,7 @@ class ManagersTest {
 
     @Test
     @DisplayName("Возвращает проинициализированные и готовые к работе экземпляры менеджеров")
-    void shouldReturnInitializedInstances() {
+    void getDefault_getDefaultHistory_shouldReturnInitializedInstances() {
         assertNotNull(Managers.getDefault(), "TaskManager не проинициализирован");
         assertNotNull(Managers.getDefaultHistory(), "HistoryManager не проинициализирован");
     }

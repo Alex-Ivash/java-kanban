@@ -1,4 +1,4 @@
-package service;
+package service.managers.history;
 
 import model.Status;
 import model.Task;
@@ -27,7 +27,7 @@ class InMemoryHistoryManagerTest {
 
     @Test
     @DisplayName("В историю можно добавить "+ InMemoryHistoryManager.MAXIMUM_CAPACITY +" задач")
-    void addMaxCapacityTasks() {
+    void add_canAddTask_upToTheMaxCapacity() {
         inMemoryHistoryManager.add(new Task(Status.NEW, "name", "description"));
 
         assertEquals(InMemoryHistoryManager.MAXIMUM_CAPACITY, inMemoryHistoryManager.getHistory().size());
@@ -35,7 +35,7 @@ class InMemoryHistoryManagerTest {
 
     @Test
     @DisplayName("При добавлении "+ (InMemoryHistoryManager.MAXIMUM_CAPACITY + 1) +"-й задачи удаляется самая первая задачи из истории")
-    void addMoreMaxCapacityTasks() {
+    void add_oldestTaskShouldBeDeleted_capacityIsOverflowing() {
         Task task1 = new Task(Status.NEW, "name", "description");
         Task task2 = new Task(Status.NEW, "name", "description");
 

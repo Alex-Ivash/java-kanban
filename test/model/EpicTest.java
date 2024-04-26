@@ -3,9 +3,10 @@ package model;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import service.managers.Managers;
+import service.managers.task.TaskManager;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Epic")
 class EpicTest {
@@ -29,7 +30,7 @@ class EpicTest {
 
     @Test
     @DisplayName("Можно добавить подзадачу в пустой эпик(без подзадач)")
-    void shouldAddSubtaskWhereEpicIsEmpty() {
+    void addSubtask_shouldAddSubtask_epicIsEmpty() {
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
         subtask.setId(1);
 
@@ -40,7 +41,7 @@ class EpicTest {
 
     @Test
     @DisplayName("Можно добавить подзадачу в непустой эпик(уже есть подзадачи)")
-    void shouldAddSubtaskWhereEpicIsNotEmpty() {
+    void addSubtask_shouldAddSubtask_epicIsNotEmpty() {
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
         subtask.setId(1);
         Subtask subtask2 = new Subtask(Status.NEW, "name", "description", 0);
@@ -53,20 +54,23 @@ class EpicTest {
     }
 
     @Test
-    @DisplayName("Можно удалить подзадачу из эпика")
-    void removeSubtask() {
+    @DisplayName("При удалении подзадачи из эпика его методами она не удаляется из менеджера")
+    void removeSubtask_subtaskRemovedOnlyFromTheEpicButNotFromTheManager() {
+        TaskManager taskManager = Managers.getDefault();
+        taskManager.createEpic(epic);
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
-        subtask.setId(1);
+        taskManager.createSubtask(subtask);
 
-        epic.addSubtask(subtask.getId());
+//        epic.addSubtask(subtask.getId());
         epic.removeSubtask(subtask.getId());
 
         assertTrue(epic.getSubtasksIds().isEmpty(), "Не удаляется подзадача из эпика");
+        assertFalse(taskManager.getAllSubTasks().isEmpty(), "Подзадача удалена из менеджера");
     }
 
     @Test
     @DisplayName("Эпик содержит все подзадачи, ранее добавленные в него")
-    void getSubtasksIds() {
+    void getSubtasksIds_allPreviouslyAddedSubtasksAreReturned() {
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
         subtask.setId(1);
         Subtask subtask2 = new Subtask(Status.NEW, "name", "description", 0);
