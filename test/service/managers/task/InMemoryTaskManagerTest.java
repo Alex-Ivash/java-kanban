@@ -37,7 +37,7 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("При удалении всех подзадач очищаются и подзадачи всех эпиков")
     void removeAllSubTasks_allSubtasksFromManagerAndEpicsAreDeleted() {
-        taskManager.removeAllSubTasks();
+        taskManager.removeAllSubtasks();
 
         taskManager.getAllEpics()
                 .forEach(epic -> assertTrue(epic.getSubtasksIds().isEmpty(), "Подзадачи не всех эпиков очищаются"));

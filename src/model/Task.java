@@ -61,6 +61,7 @@ public class Task {
         sb.append(", name='").append(name).append("'");
         sb.append(", description='").append(description).append("'");
         sb.append('}');
+
         return sb.toString();
     }
 
@@ -69,6 +70,7 @@ public class Task {
         if (this == otherTask) return true;
         if (otherTask.getClass() != getClass()) return false;
         Task task = (Task) otherTask;
+
         return id.equals(task.id);
     }
 
