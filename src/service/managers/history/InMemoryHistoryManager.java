@@ -10,7 +10,7 @@ import java.util.Map;
 public class InMemoryHistoryManager implements HistoryManager {
     private Node head;
     private Node tail;
-    final Map<Integer, Node> history;
+    private final Map<Integer, Node> history;
 
     public InMemoryHistoryManager() {
         this.history = new HashMap<>();
@@ -23,7 +23,7 @@ public class InMemoryHistoryManager implements HistoryManager {
         }
 
         Node node = history.get(task.getId());
-        linkNeighboringNodes(node);
+        excludeNode(node);
         linkLast(task);
     }
 
@@ -39,11 +39,15 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     private ArrayList<Task> getTasks() {
-        return new ArrayList<>(history.size()) {{
-            for (Node curr = head; curr != null; curr = curr.next) {
-                add(curr.task);
-            }
-        }};
+        ArrayList<Task> resultList = new ArrayList<>(history.size());
+        Node current = head;
+
+        while (current != null) {
+            resultList.add(current.task);
+            current = current.next;
+        }
+
+        return resultList;
     }
 
     private void removeNode(Node node) {
@@ -51,11 +55,11 @@ public class InMemoryHistoryManager implements HistoryManager {
             return;
         }
 
-        linkNeighboringNodes(node);
+        excludeNode(node);
         history.remove(node.task.getId());
     }
 
-    private void linkNeighboringNodes(Node node) {
+    private void excludeNode(Node node) {
         if (node == null) {
             return;
         }
@@ -91,9 +95,9 @@ public class InMemoryHistoryManager implements HistoryManager {
     }
 
     private static class Node {
-        private Node next;
-        private Node prev;
-        private Task task;
+        public Node next;
+        public Node prev;
+        public Task task;
 
         public Node(Node prev, Task task, Node next) {
             this.prev = prev;

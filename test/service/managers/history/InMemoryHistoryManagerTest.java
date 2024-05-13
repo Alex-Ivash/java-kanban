@@ -214,19 +214,4 @@ class InMemoryHistoryManagerTest {
         assertNotEquals(0, taskManager.getHistory().size(), "Удаление всех задач типа Subtask приводит к удалению задач всех типов из истории");
         assertEquals(2, taskManager.getHistory().size(), "Удаление всех задач типа Subtask не приводит к удалению всех Subtask из истории");
     }
-
-    @Test
-    @DisplayName("При удалении задачи из истории она удаляется из коллекции-хранилища истории")
-    void remove_whenDeleteTaskFromTheHistoryItIsDeletedFromTheHistoryStorageCollection() {
-        var task1 = taskManager.getTask(1);
-        var task2 = taskManager.getTask(1);
-        var historyManager = new InMemoryHistoryManager();
-
-        historyManager.add(task1);
-        historyManager.add(task2);
-        assertEquals(1, historyManager.history.size(), "При повторном просмотре уже существующий узел не заменяется в коллекции-хранилище истории");
-
-        historyManager.remove(1);
-        assertEquals(0, historyManager.history.size(), "При принудительном удалении узел не удаляется из коллекции-хранилища истории");
-    }
 }
