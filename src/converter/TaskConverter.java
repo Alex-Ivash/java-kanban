@@ -4,6 +4,7 @@ import model.*;
 
 public class TaskConverter {
     private static final String DELIMITER = ",";
+
     public static String toString(Task task) {
         return String.join(DELIMITER,
                 String.valueOf(task.getId()),
