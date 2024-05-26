@@ -16,7 +16,14 @@ public class Task {
         this.description = description;
     }
 
-    public Task(String name, String description) {
+    protected Task(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
+
+    public Task(Integer id, Status status, String name, String description) {
+        this.id = id;
+        this.status = status;
         this.name = name;
         this.description = description;
     }
@@ -51,6 +58,14 @@ public class Task {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Integer getEpicId() {
+        return null;
+    }
+
+    public Type getType() {
+        return Type.TASK;
     }
 
     @Override

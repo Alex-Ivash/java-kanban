@@ -20,7 +20,7 @@ class InMemoryTaskManagerTest {
 
     @BeforeEach
     void init() {
-        taskManager = Managers.getDefault();
+        taskManager = new InMemoryTaskManager(Managers.getDefaultHistory());
 
         taskManager.createTask(new Task(Status.NEW, "task1", "task1_descr"));
         taskManager.createTask(new Task(Status.NEW, "task2", "task2_descr"));

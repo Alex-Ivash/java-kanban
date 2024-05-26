@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import service.managers.Managers;
+import service.managers.task.InMemoryTaskManager;
 import service.managers.task.TaskManager;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -12,11 +13,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class EpicTest {
     private static Epic epic;
     private static Epic anotherEpic;
+    private static TaskManager taskManager;
 
     @BeforeEach
     public void init() {
         epic = new Epic("name", "description");
         anotherEpic = new Epic("name", "description");
+        taskManager = new InMemoryTaskManager(Managers.getDefaultHistory());
         epic.setId(0);
     }
 
@@ -56,7 +59,6 @@ class EpicTest {
     @Test
     @DisplayName("При удалении подзадачи из эпика его методами она не удаляется из менеджера")
     void removeSubtask_subtaskRemovedOnlyFromTheEpicButNotFromTheManager() {
-        TaskManager taskManager = Managers.getDefault();
         taskManager.createEpic(epic);
         Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
         taskManager.createSubtask(subtask);

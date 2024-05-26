@@ -10,8 +10,19 @@ public class Subtask extends Task {
         this.epicId = Objects.requireNonNull(epicId);
     }
 
-    public int getEpicId() {
+    public Subtask(Integer id, Status status, String name, String description, Integer epicId) {
+        super(id, status, name, description);
+        this.epicId = epicId;
+    }
+
+    @Override
+    public Integer getEpicId() {
         return epicId;
+    }
+
+    @Override
+    public Type getType() {
+        return Type.SUBTASK;
     }
 
     public void setEpicId(int epicId) {
