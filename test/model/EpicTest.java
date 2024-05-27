@@ -34,7 +34,7 @@ class EpicTest {
     @Test
     @DisplayName("Можно добавить подзадачу в пустой эпик(без подзадач)")
     void addSubtask_shouldAddSubtask_epicIsEmpty() {
-        Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask.setId(1);
 
         epic.addSubtask(subtask.getId());
@@ -45,9 +45,9 @@ class EpicTest {
     @Test
     @DisplayName("Можно добавить подзадачу в непустой эпик(уже есть подзадачи)")
     void addSubtask_shouldAddSubtask_epicIsNotEmpty() {
-        Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask.setId(1);
-        Subtask subtask2 = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask2 = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask2.setId(2);
 
         epic.addSubtask(subtask.getId());
@@ -60,7 +60,7 @@ class EpicTest {
     @DisplayName("При удалении подзадачи из эпика его методами она не удаляется из менеджера")
     void removeSubtask_subtaskRemovedOnlyFromTheEpicButNotFromTheManager() {
         taskManager.createEpic(epic);
-        Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
         taskManager.createSubtask(subtask);
 
 //        epic.addSubtask(subtask.getId());
@@ -73,11 +73,11 @@ class EpicTest {
     @Test
     @DisplayName("Эпик содержит все подзадачи, ранее добавленные в него")
     void getSubtasksIds_allPreviouslyAddedSubtasksAreReturned() {
-        Subtask subtask = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask.setId(1);
-        Subtask subtask2 = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask2 = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask2.setId(2);
-        Subtask subtask3 = new Subtask(Status.NEW, "name", "description", 0);
+        Subtask subtask3 = new Subtask(TaskStatus.NEW, "name", "description", 0);
         subtask3.setId(3);
 
         epic.addSubtask(subtask.getId());

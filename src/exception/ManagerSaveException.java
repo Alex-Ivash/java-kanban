@@ -1,4 +1,4 @@
-package service.managers.memory;
+package exception;
 
 public class ManagerSaveException extends RuntimeException {
     public ManagerSaveException(String message) {

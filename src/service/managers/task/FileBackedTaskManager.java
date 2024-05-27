@@ -1,12 +1,12 @@
-package service.managers.memory;
+package service.managers.task;
 
 import converter.TaskConverter;
+import exception.ManagerLoadException;
+import exception.ManagerSaveException;
 import model.Epic;
 import model.Subtask;
 import model.Task;
-import service.managers.Managers;
 import service.managers.history.HistoryManager;
-import service.managers.task.InMemoryTaskManager;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,16 +24,12 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         this.storageCSV = Path.of(file);
     }
 
-    private FileBackedTaskManager(String file) {
-        this(Managers.getDefaultHistory(), file);
-    }
-
     public FileBackedTaskManager(HistoryManager historyManager) {
         this(historyManager, DEFAULT_CSV_FILE);
     }
 
-    public static FileBackedTaskManager loadFromFile(String file) {
-        FileBackedTaskManager fileBackedTaskManager = new FileBackedTaskManager(file);
+    public static FileBackedTaskManager loadFromFile(HistoryManager historyManager, String file) {
+        FileBackedTaskManager fileBackedTaskManager = new FileBackedTaskManager(historyManager, file);
         fileBackedTaskManager.loadFromFile();
 
         return fileBackedTaskManager;
@@ -69,7 +65,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
             try {
                 Files.createDirectories(parentPathToStorage);
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ManagerSaveException(e.getMessage());
             }
         }
 

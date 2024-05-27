@@ -1,9 +1,9 @@
 package service.managers.task;
 
 import model.Epic;
-import model.Status;
 import model.Subtask;
 import model.Task;
+import model.TaskStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,16 +22,16 @@ class InMemoryTaskManagerTest {
     void init() {
         taskManager = new InMemoryTaskManager(Managers.getDefaultHistory());
 
-        taskManager.createTask(new Task(Status.NEW, "task1", "task1_descr"));
-        taskManager.createTask(new Task(Status.NEW, "task2", "task2_descr"));
-        taskManager.createTask(new Task(Status.NEW, "task3", "task3_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task1", "task1_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task2", "task2_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task3", "task3_descr"));
 
         taskManager.createEpic(new Epic("epic1", "epic1_descr"));
         taskManager.createEpic(new Epic("epic2", "epic2_descr"));
 
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask1", "subtask1_descr", 3));
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask2", "subtask2_descr", 3));
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask3", "subtask3_descr", 4));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 3));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask2", "subtask2_descr", 3));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask3", "subtask3_descr", 4));
     }
 
     @Test
@@ -56,7 +56,7 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("Задача добавляется и может быть найдена по id")
     void createTask_getTask_shouldTaskCreatedAndCanBeFoundById() {
-        Task task = new Task(Status.NEW, "Test addNewTask", "Test addNewTask description");
+        Task task = new Task(TaskStatus.NEW, "Test addNewTask", "Test addNewTask description");
         int taskId = taskManager.createTask(task).getId();
         Task savedTask = taskManager.getTask(taskId);
 
@@ -73,7 +73,7 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("Подзадача добавляется и может быть найдена по id")
     void createSubtask_getSubtask_shouldSubtaskCreatedAndCanBeFoundById() {
-        Subtask subtask = new Subtask(Status.NEW, "Test addNewTask", "Test addNewTask description", 3);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "Test addNewTask", "Test addNewTask description", 3);
         int subtaskId = taskManager.createSubtask(subtask).getId();
         Subtask savedSubtask = taskManager.getSubtask(subtaskId);
 
@@ -107,7 +107,7 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("Можно обновить конкретную задачу")
     void updateTask_taskUpdatedBasedOnTheObjectFieldsInTheArgument() {
-        Task task = new Task(Status.IN_PROGRESS, "Test addNewTask", "Test addNewTask description");
+        Task task = new Task(TaskStatus.IN_PROGRESS, "Test addNewTask", "Test addNewTask description");
         task.setId(0);
         Task savedTask = taskManager.updateTask(task);
 
@@ -119,7 +119,7 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("Можно обновить конкретную подзадачу")
     void updateSubtask_subtaskUpdatedBasedOnTheObjectFieldsInTheArgument() {
-        Subtask subtask = new Subtask(Status.DONE, "Test addNewTask", "Test addNewTask description", 3);
+        Subtask subtask = new Subtask(TaskStatus.DONE, "Test addNewTask", "Test addNewTask description", 3);
         subtask.setId(7);
         Subtask savedSubtask = taskManager.updateSubtask(subtask);
 
@@ -195,11 +195,11 @@ class InMemoryTaskManagerTest {
     @DisplayName("Cтатус эпика NEW рассчитывается на основе статусов его подзадач")
     void calculateEpicStatus_shouldBeNEW_emptyEpicOrAllSubtasksInStatusNEW() {
         Epic epic = taskManager.createEpic(new Epic("name", "desr"));
-        assertEquals(Status.NEW, epic.getStatus(), "Пустой эпик имеет статус, отличный от NEW");
+        assertEquals(TaskStatus.NEW, epic.getStatus(), "Пустой эпик имеет статус, отличный от NEW");
 
-        taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
-        assertEquals(Status.NEW, epic.getStatus(), "Эпик со всеми подзадачами в статусе NEW имеет статус, отличный от NEW");
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "name", "descr", 8));
+        assertEquals(TaskStatus.NEW, epic.getStatus(), "Эпик со всеми подзадачами в статусе NEW имеет статус, отличный от NEW");
     }
 
     @Test
@@ -207,9 +207,9 @@ class InMemoryTaskManagerTest {
     void calculateEpicStatus_shouldBeDONE_allSubtasksInStatusDONE() {
         Epic epic = taskManager.createEpic(new Epic("name", "desr"));
 
-        taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
-        assertEquals(Status.DONE, epic.getStatus(), "Эпик со всеми подзадачами в статусе DONE имеет статус, отличный от DONE");
+        taskManager.createSubtask(new Subtask(TaskStatus.DONE, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.DONE, "name", "descr", 8));
+        assertEquals(TaskStatus.DONE, epic.getStatus(), "Эпик со всеми подзадачами в статусе DONE имеет статус, отличный от DONE");
     }
 
     @Test
@@ -217,37 +217,37 @@ class InMemoryTaskManagerTest {
     void calculateEpicStatus_shouldBeIN_PROGRESS_allSubtasksInStatusIN_PROGRESSOrDONEandNEWorIN_PROGRESSandNEWorIN_PROGRESSandDONE() {
         Epic epic = taskManager.createEpic(new Epic("name", "desr"));
 
-        taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
-        assertEquals(Status.IN_PROGRESS, epic.getStatus(), "Эпик со всеми подзадачами в статусе IN_PROGRESS имеет статус, отличный от IN_PROGRESS");
+        taskManager.createSubtask(new Subtask(TaskStatus.IN_PROGRESS, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.IN_PROGRESS, "name", "descr", 8));
+        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus(), "Эпик со всеми подзадачами в статусе IN_PROGRESS имеет статус, отличный от IN_PROGRESS");
 
         taskManager.removeSubtask(13);
         taskManager.removeSubtask(14);
 
-        taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
-        assertEquals(Status.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе DONE и NEW имеет статус, отличный от IN_PROGRESS");
+        taskManager.createSubtask(new Subtask(TaskStatus.DONE, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "name", "descr", 8));
+        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе DONE и NEW имеет статус, отличный от IN_PROGRESS");
 
         taskManager.removeSubtask(15);
         taskManager.removeSubtask(16);
 
-        taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.NEW, "name", "descr", 8));
-        assertEquals(Status.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе IN_PROGRESS и NEW имеет статус, отличный от IN_PROGRESS");
+        taskManager.createSubtask(new Subtask(TaskStatus.IN_PROGRESS, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "name", "descr", 8));
+        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе IN_PROGRESS и NEW имеет статус, отличный от IN_PROGRESS");
 
         taskManager.removeSubtask(17);
         taskManager.removeSubtask(18);
 
-        taskManager.createSubtask(new Subtask(Status.IN_PROGRESS, "name", "descr", 8));
-        taskManager.createSubtask(new Subtask(Status.DONE, "name", "descr", 8));
-        assertEquals(Status.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе IN_PROGRESS и DONE имеет статус, отличный от IN_PROGRESS");
+        taskManager.createSubtask(new Subtask(TaskStatus.IN_PROGRESS, "name", "descr", 8));
+        taskManager.createSubtask(new Subtask(TaskStatus.DONE, "name", "descr", 8));
+        assertEquals(TaskStatus.IN_PROGRESS, epic.getStatus(), "Эпик с подзадачей в статусе IN_PROGRESS и DONE имеет статус, отличный от IN_PROGRESS");
     }
 
     @Test
     @DisplayName("Состояние добавленной задачи не отличается от состояния добавляемой в менеджер")
     void createTask_stateBeforeAndAfterCreateTaskShouldBeSame() {
-        Task task = new Task(Status.NEW, "name", "descr");
-        Status taskStatus = task.getStatus();
+        Task task = new Task(TaskStatus.NEW, "name", "descr");
+        TaskStatus taskStatus = task.getStatus();
         String taskName = task.getName();
         String taskDescription = task.getDescription();
 
@@ -261,8 +261,8 @@ class InMemoryTaskManagerTest {
     @Test
     @DisplayName("Состояние добавленной подзадачи не отличается от состояния добавляемой в менеджер")
     void createSubtask_stateBeforeAndAfterCreateSubtaskShouldBeSame() {
-        Subtask subtask = new Subtask(Status.NEW, "name", "descr", 3);
-        Status subtaskStatus = subtask.getStatus();
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "descr", 3);
+        TaskStatus subtaskStatus = subtask.getStatus();
         String subtaskName = subtask.getName();
         String subtaskDescription = subtask.getDescription();
         int subtaskEpicId = subtask.getEpicId();

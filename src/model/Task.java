@@ -5,12 +5,12 @@ import java.util.Objects;
 public class Task {
     protected Integer id;
 
-    protected Status status;
+    protected TaskStatus status;
 
     protected String name;
     protected String description;
 
-    public Task(Status status, String name, String description) {
+    public Task(TaskStatus status, String name, String description) {
         this.status = status;
         this.name = name;
         this.description = description;
@@ -21,7 +21,7 @@ public class Task {
         this.description = description;
     }
 
-    public Task(Integer id, Status status, String name, String description) {
+    public Task(Integer id, TaskStatus status, String name, String description) {
         this.id = id;
         this.status = status;
         this.name = name;
@@ -36,11 +36,11 @@ public class Task {
         this.id = id;
     }
 
-    public Status getStatus() {
+    public TaskStatus getStatus() {
         return status;
     }
 
-    public void setStatus(Status status) {
+    public void setStatus(TaskStatus status) {
         this.status = status;
     }
 
@@ -60,12 +60,8 @@ public class Task {
         this.description = description;
     }
 
-    public Integer getEpicId() {
-        return null;
-    }
-
-    public Type getType() {
-        return Type.TASK;
+    public TaskType getType() {
+        return TaskType.TASK;
     }
 
     @Override

@@ -11,8 +11,8 @@ class TaskTest {
     @Test
     @DisplayName("Экземпляры класса равны друг другу, если равен их id")
     void equals_shouldEqualsWithIdenticalIDs() {
-        Task task = new Task(Status.NEW, "name", "description");
-        Task taskExpected = new Task(Status.NEW, "name", "description");
+        Task task = new Task(TaskStatus.NEW, "name", "description");
+        Task taskExpected = new Task(TaskStatus.NEW, "name", "description");
 
         task.setId(1);
         taskExpected.setId(1);

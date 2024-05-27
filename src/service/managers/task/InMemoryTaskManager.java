@@ -1,9 +1,9 @@
 package service.managers.task;
 
 import model.Epic;
-import model.Status;
 import model.Subtask;
 import model.Task;
+import model.TaskStatus;
 import service.managers.history.HistoryManager;
 
 import java.util.HashMap;
@@ -233,18 +233,18 @@ public class InMemoryTaskManager implements TaskManager {
 
 
     private void calculateEpicStatus(Epic epic) {
-        List<Status> subtaskStatuses = getEpicSubtasks(epic.getId())
+        List<TaskStatus> subtaskStatuses = getEpicSubtasks(epic.getId())
                 .stream()
                 .map(Subtask::getStatus)
                 .toList();
-        Status newStatus = null;
+        TaskStatus newStatus = null;
 
-        if (subtaskStatuses.isEmpty() || subtaskStatuses.stream().allMatch(status -> status == Status.NEW)) {
-            newStatus = Status.NEW;
-        } else if (subtaskStatuses.stream().allMatch(status -> status == Status.DONE)) {
-            newStatus = Status.DONE;
+        if (subtaskStatuses.isEmpty() || subtaskStatuses.stream().allMatch(status -> status == TaskStatus.NEW)) {
+            newStatus = TaskStatus.NEW;
+        } else if (subtaskStatuses.stream().allMatch(status -> status == TaskStatus.DONE)) {
+            newStatus = TaskStatus.DONE;
         } else {
-            newStatus = Status.IN_PROGRESS;
+            newStatus = TaskStatus.IN_PROGRESS;
         }
 
         epic.setStatus(newStatus);

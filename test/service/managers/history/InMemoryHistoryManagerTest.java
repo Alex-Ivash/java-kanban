@@ -1,9 +1,9 @@
 package service.managers.history;
 
 import model.Epic;
-import model.Status;
 import model.Subtask;
 import model.Task;
+import model.TaskStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,16 +21,16 @@ class InMemoryHistoryManagerTest {
     void init() {
         taskManager = new InMemoryTaskManager(Managers.getDefaultHistory());
 
-        taskManager.createTask(new Task(Status.NEW, "task1", "task1_descr"));
-        taskManager.createTask(new Task(Status.NEW, "task2", "task2_descr"));
-        taskManager.createTask(new Task(Status.NEW, "task3", "task3_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task1", "task1_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task2", "task2_descr"));
+        taskManager.createTask(new Task(TaskStatus.NEW, "task3", "task3_descr"));
 
         taskManager.createEpic(new Epic("epic1", "epic1_descr"));
         taskManager.createEpic(new Epic("epic2", "epic2_descr"));
 
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask1", "subtask1_descr", 3));
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask2", "subtask2_descr", 3));
-        taskManager.createSubtask(new Subtask(Status.NEW, "subtask3", "subtask3_descr", 4));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 3));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask2", "subtask2_descr", 3));
+        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask3", "subtask3_descr", 4));
     }
 
     @Test

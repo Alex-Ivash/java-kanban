@@ -12,16 +12,20 @@ public class TaskConverter {
                 task.getName(),
                 String.valueOf(task.getStatus()),
                 task.getDescription(),
-                String.valueOf(task.getEpicId()));
+                "null");
+    }
+
+    public static String toString(Subtask task) {
+        return toString((Task) task).replaceFirst("null$", String.valueOf(task.getEpicId()));
     }
 
     public static Task fromString(String taskString) {
         String[] taskFields = taskString.split(DELIMITER);
 
-        Type type = Type.valueOf(taskFields[1]);
+        TaskType type = TaskType.valueOf(taskFields[1]);
 
         int id = Integer.parseInt(taskFields[0]);
-        Status status = Status.valueOf(taskFields[3]);
+        TaskStatus status = TaskStatus.valueOf(taskFields[3]);
         String name = taskFields[2];
         String description = taskFields[4];
 
