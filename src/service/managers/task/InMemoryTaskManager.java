@@ -1,29 +1,25 @@
 package service.managers.task;
 
 import model.Epic;
-import model.Status;
 import model.Subtask;
 import model.Task;
+import model.TaskStatus;
 import service.managers.history.HistoryManager;
 
 import java.util.HashMap;
 import java.util.List;
 
 public class InMemoryTaskManager implements TaskManager {
-    private int seq;
-    private final HashMap<Integer, Task> tasks;
-    private final HashMap<Integer, Subtask> subtasks;
-    private final HashMap<Integer, Epic> epics;
-    private final HistoryManager historyManager;
+    protected int seq;
+    protected final HashMap<Integer, Task> tasks = new HashMap<>();
+    protected final HashMap<Integer, Subtask> subtasks = new HashMap<>();
+    protected final HashMap<Integer, Epic> epics = new HashMap<>();
+    protected final HistoryManager historyManager;
 
     public InMemoryTaskManager(HistoryManager historyManager) {
         this.historyManager = historyManager;
-        this.tasks = new HashMap<>();
-        this.subtasks = new HashMap<>();
-        this.epics = new HashMap<>();
-        this.seq = 0;
+        this.seq = -1;
     }
-
 
     @Override
     public List<Task> getAllTasks() {
@@ -237,18 +233,18 @@ public class InMemoryTaskManager implements TaskManager {
 
 
     private void calculateEpicStatus(Epic epic) {
-        List<Status> subtaskStatuses = getEpicSubtasks(epic.getId())
+        List<TaskStatus> subtaskStatuses = getEpicSubtasks(epic.getId())
                 .stream()
                 .map(Subtask::getStatus)
                 .toList();
-        Status newStatus = null;
+        TaskStatus newStatus = null;
 
-        if (subtaskStatuses.isEmpty() || subtaskStatuses.stream().allMatch(status -> status == Status.NEW)) {
-            newStatus = Status.NEW;
-        } else if (subtaskStatuses.stream().allMatch(status -> status == Status.DONE)) {
-            newStatus = Status.DONE;
+        if (subtaskStatuses.isEmpty() || subtaskStatuses.stream().allMatch(status -> status == TaskStatus.NEW)) {
+            newStatus = TaskStatus.NEW;
+        } else if (subtaskStatuses.stream().allMatch(status -> status == TaskStatus.DONE)) {
+            newStatus = TaskStatus.DONE;
         } else {
-            newStatus = Status.IN_PROGRESS;
+            newStatus = TaskStatus.IN_PROGRESS;
         }
 
         epic.setStatus(newStatus);
@@ -256,6 +252,6 @@ public class InMemoryTaskManager implements TaskManager {
 
 
     private int getNextId() {
-        return seq++;
+        return ++seq;
     }
 }

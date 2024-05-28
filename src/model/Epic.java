@@ -4,11 +4,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Epic extends Task {
-    private final Set<Integer> subtasksIds;
+    private final Set<Integer> subtasksIds = new HashSet<>();
 
     public Epic(String name, String description) {
         super(name, description);
-        this.subtasksIds = new HashSet<>();
+    }
+
+    public Epic(Integer id, TaskStatus status, String name, String description) {
+        super(id, status, name, description);
     }
 
     public void addSubtask(int subtaskId) {
@@ -21,6 +24,11 @@ public class Epic extends Task {
 
     public Set<Integer> getSubtasksIds() {
         return subtasksIds;
+    }
+
+    @Override
+    public TaskType getType() {
+        return TaskType.EPIC;
     }
 
     @Override
