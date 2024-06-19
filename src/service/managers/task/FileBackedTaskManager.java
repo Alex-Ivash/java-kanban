@@ -70,7 +70,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         }
 
         try (PrintWriter printer = new PrintWriter(storageCSV.toFile(), StandardCharsets.UTF_8)) {
-            printer.println("id,type,name,status,description,epic");
+            printer.println("id,type,name,status,description,epic,startTime,duration");
             getAllTasks().forEach(task -> printer.println(TaskConverter.toString(task)));
             getAllSubTasks().forEach(subtask -> printer.println(TaskConverter.toString(subtask)));
             getAllEpics().forEach(epic -> printer.println(TaskConverter.toString(epic)));
