@@ -20,6 +20,7 @@ public class Epic extends Task {
     public void addSubtask(int subtaskId) {
         subtasksIds.add(subtaskId);
     }
+
     public void removeSubtask(int subtaskId) {
         subtasksIds.remove(subtaskId);
     }
