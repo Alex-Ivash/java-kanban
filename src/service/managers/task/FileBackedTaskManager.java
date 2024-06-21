@@ -39,18 +39,25 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
         try {
             List<String> taskStrings = Files.readAllLines(storageCSV);
 
-            for (int i = 1; i < taskStrings.size(); i++) {
-                String tsk = taskStrings.get(i);
-                Task loadedTask = TaskConverter.fromString(tsk);
+            taskStrings.stream()
+                    .skip(1)
+                    .forEach(tsk -> {
+                        Task loadedTask = TaskConverter.fromString(tsk);
 
-                switch (loadedTask) {
-                    case Subtask subtask -> subtasks.put(subtask.getId(), subtask);
-                    case Epic epic -> epics.put(epic.getId(), epic);
-                    case Task task -> tasks.put(task.getId(), task);
-                }
+                        switch (loadedTask) {
+                            case Subtask subtask -> {
+                                subtasks.put(subtask.getId(), subtask);
+                                prioritizedTasks.add(subtask);
+                            }
+                            case Epic epic -> epics.put(epic.getId(), epic);
+                            case Task task -> {
+                                tasks.put(task.getId(), task);
+                                prioritizedTasks.add(task);
+                            }
+                        }
 
-                seq = Math.max(seq, loadedTask.getId());
-            }
+                        seq = Math.max(seq, loadedTask.getId());
+                    });
 
             subtasks.forEach((subtaskId, subtask) -> epics.get(subtask.getEpicId()).addSubtask(subtaskId));
         } catch (IOException e) {

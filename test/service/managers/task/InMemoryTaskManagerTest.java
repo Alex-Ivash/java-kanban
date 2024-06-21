@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import service.managers.Managers;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -24,7 +25,7 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
 
     static Stream<Arguments> taskStatusProvider() {
         return Stream.of(
-                Arguments.of(List.of(), TaskStatus.NEW),
+                Arguments.of(Collections.emptyList(), TaskStatus.NEW),
                 Arguments.of(List.of(TaskStatus.DONE, TaskStatus.DONE), TaskStatus.DONE),
                 Arguments.of(List.of(TaskStatus.IN_PROGRESS, TaskStatus.IN_PROGRESS), TaskStatus.IN_PROGRESS),
                 Arguments.of(List.of(TaskStatus.IN_PROGRESS, TaskStatus.DONE), TaskStatus.IN_PROGRESS),
@@ -37,12 +38,17 @@ class InMemoryTaskManagerTest extends TaskManagerTest<InMemoryTaskManager> {
 
     @ParameterizedTest(name = "Эпик с подзадачами в статусах {0} имеет статус {1}")
     @MethodSource("taskStatusProvider")
-    @DisplayName("Cтатус эпика рассчитывается на основе статусов его подзадач")
-    void calculateEpicStatus_epicStatusCalculatedBasedOnTheStatusesOfItsSubtasks(List<TaskStatus> subtaskStatuses, TaskStatus expectedStatus) {
+    @DisplayName("Cтатус Epic рассчитывается на основе статусов его подзадач")
+    void calculateEpicState_BasedOnSubtaskStatuses(List<TaskStatus> subtaskStatuses, TaskStatus expectedStatus) {
+        //given
         Epic epic = taskManager.createEpic(new Epic("name", "desr"));
 
-        subtaskStatuses.forEach(taskStatus -> taskManager.createSubtask(new Subtask(taskStatus, "name", "descr", epic.getId())));
+        //when
+        subtaskStatuses.forEach(taskStatus -> {
+            taskManager.createSubtask(new Subtask(taskStatus, "name", "descr", 0));
+        });
 
+        //then
         assertEquals(
                 expectedStatus, epic.getStatus(),
                 String.format("Эпик с подзадачами в статусах %s имеет статус, отличный от %s", subtaskStatuses, expectedStatus)

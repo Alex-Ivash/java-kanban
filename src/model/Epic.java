@@ -1,5 +1,7 @@
 package model;
 
+import service.managers.task.InMemoryTaskManager;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -11,6 +13,7 @@ public class Epic extends Task {
 
     public Epic(String name, String description) {
         super(name, description);
+        this.endTime = InMemoryTaskManager.DEFAULT_END_TIME;
     }
 
     public Epic(Integer id, TaskStatus status, String name, String description, LocalDateTime startTime, Duration duration) {

@@ -1,14 +1,14 @@
 package model;
 
+import service.managers.task.InMemoryTaskManager;
+
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Task {
-    public static final LocalDateTime DEFAULT_START_TIME = LocalDateTime.of(9999, 12, 31, 23, 59, 59);
-    public static final Duration DEFAULT_DURATION = Duration.ZERO;
     protected Integer id;
-    protected TaskStatus status; // TODO сделать статус NEW дефолтным?
+    protected TaskStatus status;
     protected String name;
     protected String description;
     protected LocalDateTime startTime;
@@ -17,8 +17,8 @@ public class Task {
     protected Task(String name, String description) {
         this.name = name;
         this.description = description;
-        this.duration = Task.DEFAULT_DURATION;
-        this.startTime = Task.DEFAULT_START_TIME;
+        this.duration = InMemoryTaskManager.DEFAULT_DURATION;
+        this.startTime = InMemoryTaskManager.DEFAULT_START_TIME;
     }
 
     public Task(TaskStatus status, String name, String description) {

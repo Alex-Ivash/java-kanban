@@ -9,10 +9,13 @@ class SubtaskTest {
 
     @Test
     @DisplayName("Экземпляры класса равны друг другу, если равен их id")
-    void equals_shouldEqualsWithIdenticalIDs() {
+    void equals_InstancesAreEqual_IdsAreEqual() {
+        //given
         Subtask subtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
         Subtask subtaskExpected = new Subtask(TaskStatus.NEW, "name", "description", 0);
 
+        //when
+        //then
         subtask.setId(1);
         subtaskExpected.setId(1);
 

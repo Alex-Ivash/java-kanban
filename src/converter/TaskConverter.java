@@ -5,7 +5,7 @@ import model.*;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-public class TaskConverter { // TODO добавить в будущем в тесты
+public class TaskConverter {
     private static final String DELIMITER = ",";
 
     public static String toString(Task task) {
@@ -21,7 +21,10 @@ public class TaskConverter { // TODO добавить в будущем в те�
     }
 
     public static String toString(Subtask task) {
-        return toString((Task) task).replaceFirst("null", String.valueOf(task.getEpicId()));
+        String taskString = toString((Task) task);
+        String[] parts = taskString.split(DELIMITER);
+        parts[5] = String.valueOf(task.getEpicId());
+        return String.join(DELIMITER, parts);
     }
 
     public static Task fromString(String taskString) {
