@@ -14,9 +14,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class InMemoryTaskManager implements TaskManager {
-    public static final LocalDateTime DEFAULT_START_TIME = LocalDateTime.MAX;
-    public static final LocalDateTime DEFAULT_END_TIME = LocalDateTime.MIN;
-    public static final Duration DEFAULT_DURATION = Duration.ZERO;
+    public static final LocalDateTime NULL_START_TIME_INDICATOR = LocalDateTime.MAX;
+    public static final LocalDateTime NULL_END_TIME_INDICATOR = LocalDateTime.MIN;
+    public static final Duration NULL_DURATION_INDICATOR = Duration.ZERO;
     protected int seq = -1;
     protected final Map<Integer, Task> tasks = new HashMap<>();
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
@@ -107,23 +107,35 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task createTask(Task newTask) {
+        if (newTask == null) {
+            throw new IllegalArgumentException("Task should not be null");
+        }
+
         newTask.setId(getNextId());
+        applyNullIndicatorStartTimeAndDurationIfMissing(newTask);
         validateCollision(newTask);
         tasks.put(newTask.getId(), newTask);
-
         prioritizedTasks.add(newTask);
 
         return newTask;
     }
 
+
     @Override
     public Subtask createSubtask(Subtask newSubtask) {
+        if (newSubtask == null) {
+            throw new IllegalArgumentException("Subtask should not be null");
+        }
+
         newSubtask.setId(getNextId());
+
+        applyNullIndicatorStartTimeAndDurationIfMissing(newSubtask);
         validateCollision(newSubtask);
 
-        Epic subtaskEpic = epics.get(newSubtask.getEpicId());
-
+        int subtaskEpicId = newSubtask.getEpicId(); // тут бы еще влепить проверку на null в id эпика, наверное, хоть и нельзя его не задать, так как он есть в конструкторе
+        Epic subtaskEpic = (Epic) getNotNullValue(epics.get(subtaskEpicId), subtaskEpicId);
         subtaskEpic.addSubtask(newSubtask.getId());
+
         subtasks.put(newSubtask.getId(), newSubtask);
         prioritizedTasks.add(newSubtask);
         calculateEpicState(subtaskEpic);
@@ -133,7 +145,14 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Epic createEpic(Epic newEpic) {
+        if (newEpic == null) {
+            throw new IllegalArgumentException("Epic should not be null");
+        }
+
         newEpic.setId(getNextId());
+
+        applyNullIndicatorStartTimeAndDurationIfMissing(newEpic);
+
         epics.put(newEpic.getId(), newEpic);
         calculateEpicState(newEpic);
 
@@ -143,8 +162,14 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Task updateTask(Task newTask) {
+        if (newTask == null) {
+            throw new IllegalArgumentException("Task should not be null");
+        }
+
         int id = newTask.getId();
-        Task oldTask = tasks.get(id);
+        Task oldTask = getNotNullValue(tasks.get(id), id);
+
+        applyNullIndicatorStartTimeAndDurationIfMissing(newTask);
 
         if (isStartTimeOrDurationChanged(oldTask, newTask)) {
             validateCollision(newTask);
@@ -159,15 +184,24 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Subtask updateSubtask(Subtask newSubtask) {
+        if (newSubtask == null) {
+            throw new IllegalArgumentException("Subtask should not be null");
+        }
+
         int id = newSubtask.getId();
-        Subtask oldSubtask = subtasks.get(id);
+        Subtask oldSubtask = (Subtask) getNotNullValue(subtasks.get(id), id);
+
+        applyNullIndicatorStartTimeAndDurationIfMissing(newSubtask);
 
         if (isStartTimeOrDurationChanged(oldSubtask, newSubtask)) {
             validateCollision(newSubtask);
         }
 
-        Epic newSubtaskEpic = epics.get(newSubtask.getEpicId());
-        Epic oldSubtaskEpic = epics.get(oldSubtask.getEpicId());
+        int newSubtaskEpicId = newSubtask.getEpicId();
+        int oldSubtaskEpicId = oldSubtask.getEpicId();
+
+        Epic newSubtaskEpic = (Epic) getNotNullValue(epics.get(newSubtaskEpicId), newSubtaskEpicId);
+        Epic oldSubtaskEpic = epics.get(oldSubtaskEpicId);
 
         if (oldSubtaskEpic != newSubtaskEpic) {
             oldSubtaskEpic.removeSubtask(id);
@@ -185,7 +219,12 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public Epic updateEpic(Epic newEpic) {
-        Epic oldEpic = epics.get(newEpic.getId());
+        if (newEpic == null) {
+            throw new IllegalArgumentException("Epic should not be null");
+        }
+
+        int id = newEpic.getId();
+        Epic oldEpic = (Epic) getNotNullValue(epics.get(id), id);
 
         oldEpic.setName(newEpic.getName());
         oldEpic.setDescription(newEpic.getDescription());
@@ -286,13 +325,15 @@ public class InMemoryTaskManager implements TaskManager {
 
     private void calculateEpicState(Epic epic) {
         List<Subtask> epicsSubtasks = getEpicSubtasks(epic.getId());
-        int statusesBitSet = 0;
-        Duration newDuration = Duration.ZERO;
-        LocalDateTime newStartTime = LocalDateTime.MAX;
-        LocalDateTime newEndTime = LocalDateTime.MIN;
+        Duration newDuration = NULL_DURATION_INDICATOR;
+        LocalDateTime newStartTime = NULL_START_TIME_INDICATOR;
+        LocalDateTime newEndTime = NULL_END_TIME_INDICATOR;
+        TaskStatus newStatus = epicsSubtasks.isEmpty() ? TaskStatus.NEW : epicsSubtasks.getFirst().getStatus();
 
         for (Subtask epicSubtask : epicsSubtasks) {
-            statusesBitSet |= 1 << epicSubtask.getStatus().bitSetIndex;
+            if (newStatus != epicSubtask.getStatus()) {
+                newStatus = TaskStatus.IN_PROGRESS;
+            }
 
             if (isDefaultStartTime(epicSubtask)) {
                 continue;
@@ -306,7 +347,7 @@ public class InMemoryTaskManager implements TaskManager {
         epic.setStartTime(newStartTime);
         epic.setEndTime(newEndTime);
         epic.setDuration(newDuration);
-        epic.setStatus(getUpdatedEpicStatus(statusesBitSet));
+        epic.setStatus(newStatus);
     }
 
     private LocalDateTime getUpdatedEpicStartTime(Subtask subtask, LocalDateTime startTime) {
@@ -321,26 +362,33 @@ public class InMemoryTaskManager implements TaskManager {
         return newEndTime.isAfter(endTime) ? newEndTime : endTime;
     }
 
-    private TaskStatus getUpdatedEpicStatus(int statusesBitSet) {
-        return switch (statusesBitSet) {
-            case 0, 1 -> TaskStatus.NEW;
-            case 4 -> TaskStatus.DONE;
-            default -> TaskStatus.IN_PROGRESS;
-        };
-    }
-
     private int getNextId() {
         return ++seq;
     }
 
     private boolean isDefaultStartTime(Task task) {
-        return task.getStartTime().equals(DEFAULT_START_TIME);
+        return task.getStartTime().equals(NULL_START_TIME_INDICATOR);
     }
 
     private boolean isStartTimeOrDurationChanged(Task originalTask, Task updatedTask) {
         return !originalTask.getStartTime().equals(updatedTask.getStartTime())
                 || !originalTask.getDuration().equals(updatedTask.getDuration());
 
+    }
+
+    private void applyNullIndicatorStartTimeAndDurationIfMissing(Task task) {
+        if (task.getStartTime() == null || task.getDuration() == null) {
+            task.setStartTime(NULL_START_TIME_INDICATOR);
+            task.setDuration(NULL_DURATION_INDICATOR);
+        }
+    }
+
+    private void applyNullIndicatorStartTimeAndDurationIfMissing(Epic epic) {
+        if (epic.getStartTime() == null || epic.getDuration() == null) {
+            epic.setStartTime(NULL_START_TIME_INDICATOR);
+            epic.setDuration(NULL_DURATION_INDICATOR);
+            epic.setEndTime(NULL_END_TIME_INDICATOR);
+        }
     }
 
     private Task getNotNullValue(Task task, int id) {

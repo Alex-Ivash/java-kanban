@@ -246,6 +246,24 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
+    @DisplayName("При передаче null в аргумент метода создания Task будет выброшено IllegalArgumentException")
+    void createTask_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.createTask(null), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При передаче null в аргумент метода создания Subtask будет выброшено IllegalArgumentException")
+    void createSubtask_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.createSubtask(null), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При передаче null в аргумент метода создания Epic будет выброшено IllegalArgumentException")
+    void createEpic_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.createEpic(null), "Исключение не выброшено");
+    }
+
+    @Test
     @DisplayName("Состояние добавленной задачи типа Task не отличается от состояния добавляемой в менеджер")
     void createTask_StateEqualsToAddedInManager_NoDifference() {
         //given
@@ -319,9 +337,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
                 () -> assertEquals(epicName, addedEpic.getName(), "Имя добавляемой и добавленной задачи изменился при добавлении"),
                 () -> assertEquals(epicDescription, addedEpic.getDescription(), "Описание добавляемой и добавленной задачи изменился при добавлении"),
                 () -> assertTrue(addedEpic.getSubtasksIds().isEmpty(), "Список подзадач у добавляемого и добавленного эпика изменился при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.DEFAULT_START_TIME, addedEpic.getStartTime(), "Время старта добавляемого и добавленного эпика изменилось при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.DEFAULT_END_TIME, addedEpic.getEndTime(), "Время окончания добавляемого и добавленного эпика изменилось при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.DEFAULT_DURATION, addedEpic.getDuration(), "Длительность добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.NULL_START_TIME_INDICATOR, addedEpic.getStartTime(), "Время старта добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.NULL_END_TIME_INDICATOR, addedEpic.getEndTime(), "Время окончания добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.NULL_DURATION_INDICATOR, addedEpic.getDuration(), "Длительность добавляемого и добавленного эпика изменилось при добавлении"),
                 () -> assertEquals(TaskStatus.NEW, addedEpic.getStatus(), "Статус добавляемого и добавленного эпика изменился при добавлении")
         );
     }
@@ -427,6 +445,19 @@ abstract class TaskManagerTest<T extends TaskManager> {
                 () -> assertEquals(epic.getEndTime(), newEpicEndTime, "Время окончания эпика не обновилось"),
                 () -> assertEquals(epic.getDuration(), newEpicDuration, "Продолжительность эпика не обновилось")
         );
+    }
+
+    @Test
+    @DisplayName("При создании Subtask, эпик которой не существует выбрасывается NotFoundException")
+    void createSubtask_() {
+        //given
+        Epic epic = new Epic("", "");
+        taskManager.createEpic(epic);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", Integer.MAX_VALUE);
+
+        //when
+        //then
+        assertThrows(NotFoundException.class, () -> taskManager.createSubtask(subtask), "Исключение не выброшено");
     }
 
     @Test
@@ -812,7 +843,8 @@ abstract class TaskManagerTest<T extends TaskManager> {
     void updateTask_StateUpdated() {
         //given
         Task oldTask = new Task(TaskStatus.NEW, "", "", LocalDateTime.now(), Duration.ofDays(1));
-        Task updatedTask = new Task(0, TaskStatus.DONE, "new", "new", InMemoryTaskManager.DEFAULT_START_TIME, InMemoryTaskManager.DEFAULT_DURATION);
+        Task updatedTask = new Task(TaskStatus.DONE, "new", "new");
+        updatedTask.setId(0);
         taskManager.createTask(oldTask);
 
         //when
@@ -840,7 +872,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createEpic(epic2);
 
         Subtask oldSubtask = new Subtask(TaskStatus.NEW, "", "", 0, LocalDateTime.now(), Duration.ofDays(1));
-        Subtask updatedSubtask = new Subtask(2, TaskStatus.DONE, "new", "new", 1, InMemoryTaskManager.DEFAULT_START_TIME, InMemoryTaskManager.DEFAULT_DURATION);
+        Subtask updatedSubtask = new Subtask(TaskStatus.DONE, "new", "new", 1);
+        updatedSubtask.setId(2);
+
         taskManager.createSubtask(oldSubtask);
 
         //when
@@ -880,6 +914,80 @@ abstract class TaskManagerTest<T extends TaskManager> {
                 () -> assertNotEquals(controlEpic.getStartTime(), updatedEpic.getStartTime(), "Время начала эпика обновилось."),
                 () -> assertNotEquals(controlEpic.getDuration(), updatedEpic.getDuration(), "Длительность эпика обновилась.")
         );
+    }
+
+    @Test
+    @DisplayName("При попытке обновления несуществующего Task выбрасывается NotFoundException")
+    void updateTask_() {
+        //given
+        Task task = new Task(TaskStatus.NEW, "", "");
+        task.setId(0);
+
+        //when
+        //then
+        assertThrows(NotFoundException.class, () -> taskManager.updateTask(task), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При попытке обновления несуществующего Subtask выбрасывается NotFoundException")
+    void updateSubtask_() {
+        //given
+        Epic epic = new Epic("", "");
+        taskManager.createEpic(epic);
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
+        subtask.setId(1);
+
+        //when
+        //then
+        assertThrows(NotFoundException.class, () -> taskManager.updateSubtask(subtask), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При попытке обновления несуществующего Epic выбрасывается NotFoundException")
+    void updateEpic_() {
+        //given
+        Epic epic = new Epic("", "");
+        epic.setId(0);
+
+        //when
+        //then
+        assertThrows(NotFoundException.class, () -> taskManager.updateEpic(epic), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При передаче null в аргумент метода обновления Task будет выброшено IllegalArgumentException")
+    void updateTask_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.updateTask(null), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При передаче null в аргумент метода обновления Subtask будет выброшено IllegalArgumentException")
+    void updateSubtask_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.updateSubtask(null), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При передаче null в аргумент метода обновления Epic будет выброшено IllegalArgumentException")
+    void updateEpic_1() {
+        assertThrows(IllegalArgumentException.class, () -> taskManager.updateEpic(null), "Исключение не выброшено");
+    }
+
+    @Test
+    @DisplayName("При обновлении эпика, которому принадлежит Subtask на не существующий выбрасывается NotFoundException")
+    void updateSubtask_2() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
+
+        taskManager.createEpic(epic);
+        taskManager.createSubtask(subtask);
+
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "", "", Integer.MAX_VALUE);
+        newSubtask.setId(1);
+
+        //when
+        //then
+        assertThrows(NotFoundException.class, () -> taskManager.updateSubtask(newSubtask), "Исключение не выброшено");
     }
 
     @Test
@@ -1142,9 +1250,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(subtask2);
 
         TaskStatus newEpicTaskStatus = TaskStatus.NEW;
-        LocalDateTime newEpicStartTime = InMemoryTaskManager.DEFAULT_START_TIME;
-        LocalDateTime newEpicEndTime = InMemoryTaskManager.DEFAULT_END_TIME;
-        Duration newEpicDuration = InMemoryTaskManager.DEFAULT_DURATION;
+        LocalDateTime newEpicStartTime = InMemoryTaskManager.NULL_START_TIME_INDICATOR;
+        LocalDateTime newEpicEndTime = InMemoryTaskManager.NULL_END_TIME_INDICATOR;
+        Duration newEpicDuration = InMemoryTaskManager.NULL_DURATION_INDICATOR;
 
         //when
         taskManager.removeAllSubtasks();

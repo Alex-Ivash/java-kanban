@@ -1,7 +1,5 @@
 package model;
 
-import service.managers.task.InMemoryTaskManager;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -17,8 +15,6 @@ public class Task {
     protected Task(String name, String description) {
         this.name = name;
         this.description = description;
-        this.duration = InMemoryTaskManager.DEFAULT_DURATION;
-        this.startTime = InMemoryTaskManager.DEFAULT_START_TIME;
     }
 
     public Task(TaskStatus status, String name, String description) {
