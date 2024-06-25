@@ -1,31 +1,36 @@
 package model;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class Task {
     protected Integer id;
-
     protected TaskStatus status;
-
     protected String name;
     protected String description;
-
-    public Task(TaskStatus status, String name, String description) {
-        this.status = status;
-        this.name = name;
-        this.description = description;
-    }
+    protected LocalDateTime startTime;
+    protected Duration duration;
 
     protected Task(String name, String description) {
         this.name = name;
         this.description = description;
     }
 
-    public Task(Integer id, TaskStatus status, String name, String description) {
-        this.id = id;
+    public Task(TaskStatus status, String name, String description) {
+        this(name, description);
         this.status = status;
-        this.name = name;
-        this.description = description;
+    }
+
+    public Task(TaskStatus status, String name, String description, LocalDateTime startTime, Duration duration) {
+        this(status, name, description);
+        this.startTime = startTime;
+        this.duration = duration;
+    }
+
+    public Task(Integer id, TaskStatus status, String name, String description, LocalDateTime startTime, Duration duration) {
+        this(status, name, description, startTime, duration);
+        this.id = id;
     }
 
     public int getId() {
@@ -64,6 +69,26 @@ public class Task {
         return TaskType.TASK;
     }
 
+    public LocalDateTime getEndTime() {
+        return startTime.plus(duration);
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(LocalDateTime startTime) {
+        this.startTime = startTime;
+    }
+
+    public Duration getDuration() {
+        return duration;
+    }
+
+    public void setDuration(Duration duration) {
+        this.duration = duration;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder(getClass().getSimpleName() + "{");
@@ -71,6 +96,8 @@ public class Task {
         sb.append(", status=").append(status);
         sb.append(", name='").append(name).append("'");
         sb.append(", description='").append(description).append("'");
+        sb.append(", startTime='").append(startTime).append("'");
+        sb.append(", duration='").append(duration).append("'");
         sb.append('}');
 
         return sb.toString();

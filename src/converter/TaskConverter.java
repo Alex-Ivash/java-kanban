@@ -2,6 +2,9 @@ package converter;
 
 import model.*;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 public class TaskConverter {
     private static final String DELIMITER = ",";
 
@@ -12,11 +15,16 @@ public class TaskConverter {
                 task.getName(),
                 String.valueOf(task.getStatus()),
                 task.getDescription(),
-                "null");
+                "null",
+                String.valueOf(task.getStartTime()),
+                String.valueOf(task.getDuration()));
     }
 
     public static String toString(Subtask task) {
-        return toString((Task) task).replaceFirst("null$", String.valueOf(task.getEpicId()));
+        String taskString = toString((Task) task);
+        String[] parts = taskString.split(DELIMITER);
+        parts[5] = String.valueOf(task.getEpicId());
+        return String.join(DELIMITER, parts);
     }
 
     public static Task fromString(String taskString) {
@@ -28,11 +36,13 @@ public class TaskConverter {
         TaskStatus status = TaskStatus.valueOf(taskFields[3]);
         String name = taskFields[2];
         String description = taskFields[4];
+        LocalDateTime startTime = LocalDateTime.parse(taskFields[6]);
+        Duration duration = Duration.parse(taskFields[7]);
 
         return switch (type) {
-            case TASK -> new Task(id, status, name, description);
-            case SUBTASK -> new Subtask(id, status, name, description, Integer.parseInt(taskFields[5]));
-            case EPIC -> new Epic(id, status, name, description);
+            case TASK -> new Task(id, status, name, description, startTime, duration);
+            case SUBTASK -> new Subtask(id, status, name, description, Integer.parseInt(taskFields[5]), startTime, duration);
+            case EPIC -> new Epic(id, status, name, description, startTime, duration);
         };
     }
 }

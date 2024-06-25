@@ -8,211 +8,90 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import service.managers.Managers;
-import service.managers.task.InMemoryTaskManager;
-import service.managers.task.TaskManager;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("InMemoryHistoryManager")
 class InMemoryHistoryManagerTest {
-    private static TaskManager taskManager;
+    private static HistoryManager historyManager;
 
     @BeforeEach
-    void init() {
-        taskManager = new InMemoryTaskManager(Managers.getDefaultHistory());
-
-        taskManager.createTask(new Task(TaskStatus.NEW, "task1", "task1_descr"));
-        taskManager.createTask(new Task(TaskStatus.NEW, "task2", "task2_descr"));
-        taskManager.createTask(new Task(TaskStatus.NEW, "task3", "task3_descr"));
-
-        taskManager.createEpic(new Epic("epic1", "epic1_descr"));
-        taskManager.createEpic(new Epic("epic2", "epic2_descr"));
-
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 3));
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask2", "subtask2_descr", 3));
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask3", "subtask3_descr", 4));
+    void setUp() {
+        historyManager = Managers.getDefaultHistory();
     }
 
     @Test
-    @DisplayName("Задачи типа Task могут быть добавлены в историю")
-    void add_taskCanBeAddedToTheHistory() {
-        var task1 = taskManager.getTask(0);
-        assertEquals(1, taskManager.getHistory().size(), "При попытке добавления одной задачи в историю список не вырос");
+    @DisplayName("Задачу можно добавить в историю")
+    void add_AddedToHistory() {
+        //given
+        Task task1 = new Task(0, TaskStatus.NEW, "", "", LocalDateTime.now(), Duration.ofDays(1));
 
-        var task2 = taskManager.getTask(1);
-        var task3 = taskManager.getTask(2);
-        assertEquals(3, taskManager.getHistory().size(), "Длина истории не соответствует кол-ву уникальных просмотров");
+        //when
+        historyManager.add(task1);
 
-        assertEquals(task1, taskManager.getHistory().get(0), "Первая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task2, taskManager.getHistory().get(1), "Вторая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task3, taskManager.getHistory().get(2), "Третья задача в истории не соответствует действительно просмотренной");
+        //then
+        assertEquals(task1, historyManager.getHistory().getFirst(), "Задача в историю не добавляется");
     }
 
     @Test
-    @DisplayName("Задачи типа Subtask могут быть добавлены в историю")
-    void add_subtaskCanBeAddedToTheHistory() {
-        var task1 = taskManager.getSubtask(5);
-        assertEquals(1, taskManager.getHistory().size(), "При попытке добавления одной задачи в историю список не вырос");
+    @DisplayName("Задачу можно удалить из истории")
+    void remove_RemovedFromHistory() {
+        //given
+        Epic task1 = new Epic(0, TaskStatus.NEW, "", "", LocalDateTime.now(), Duration.ofDays(1));
 
-        var task2 = taskManager.getSubtask(6);
-        var task3 = taskManager.getSubtask(7);
-        assertEquals(3, taskManager.getHistory().size(), "Длина истории не соответствует кол-ву уникальных просмотров");
+        //when
+        historyManager.remove(0);
 
-        assertEquals(task1, taskManager.getHistory().get(0), "Первая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task2, taskManager.getHistory().get(1), "Вторая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task3, taskManager.getHistory().get(2), "Третья задача в истории не соответствует действительно просмотренной");
+        //then
+        assertTrue(historyManager.getHistory().isEmpty(), "Задача из истории не удаляется");
     }
 
     @Test
-    @DisplayName("Задачи типа Epic могут быть добавлены в историю")
-    void add_epicCanBeAddedToTheHistory() {
-        var task1 = taskManager.getEpic(3);
-        assertEquals(1, taskManager.getHistory().size(), "При попытке добавления одной задачи в историю список не вырос");
+    @DisplayName("Порядок задач в выводе истории соответствует порядку добавления")
+    void getHistory_HistoryOrderMatchesInsertionOrder() {
+        //given
+        Task task1 = new Task(0, TaskStatus.NEW, "", "", LocalDateTime.now(), Duration.ofDays(1));
+        Epic task2 = new Epic(1, TaskStatus.NEW, "", "", task1.getStartTime(), Duration.ofDays(1));
+        Subtask task3 = new Subtask(2, TaskStatus.NEW, "", "", 1, task2.getStartTime(), Duration.ofDays(1));
 
-        var task2 = taskManager.getEpic(4);
-        assertEquals(2, taskManager.getHistory().size(), "Длина истории не соответствует кол-ву уникальных просмотров");
+        //when
+        historyManager.add(task1);
+        historyManager.add(task3);
+        historyManager.add(task2);
+        List<Task> history = historyManager.getHistory();
 
-        assertEquals(task1, taskManager.getHistory().get(0), "Первая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task2, taskManager.getHistory().get(1), "Вторая задача в истории не соответствует действительно просмотренной");
-    }
-
-    @Test
-    @DisplayName("Задачи типа Task, Subtask и Epic могут быть совместно добавлены в историю")
-    void add_taskAndSubtaskAndEpicCanBeAddedToTheHistory() {
-        var task1 = taskManager.getTask(0);
-        assertEquals(1, taskManager.getHistory().size(), "При попытке добавления одной задачи в историю список не вырос");
-
-        var task2 = taskManager.getSubtask(5);
-        var task3 = taskManager.getEpic(3);
-        assertEquals(3, taskManager.getHistory().size(), "Длина истории не соответствует кол-ву уникальных просмотров");
-
-        assertEquals(task1, taskManager.getHistory().get(0), "Первая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task2, taskManager.getHistory().get(1), "Вторая задача в истории не соответствует действительно просмотренной");
-        assertEquals(task3, taskManager.getHistory().get(2), "Третья задача в истории не соответствует действительно просмотренной");
+        //then
+        assertAll("Порядок задач в выводе не соответствует порядку введения задач в историю",
+                () -> assertEquals(task1, history.get(0)),
+                () -> assertEquals(task3, history.get(1)),
+                () -> assertEquals(task2, history.get(2))
+        );
     }
 
     @Test
     @DisplayName("При повторном просмотре удаляется существующий в истории просмотр")
-    void add_whenViewAgainExistingViewInTheHistoryIsDeleted() {
-        taskManager.getTask(0);
-        taskManager.getTask(0);
-        taskManager.getTask(1);
-        assertEquals(2, taskManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется с головы");
+    void add_RemoveExistingFromHistory_Revisit() {
+        //given
+        Task task1 = new Task(0, TaskStatus.NEW, "", "", LocalDateTime.now(), Duration.ofDays(1));
+        Epic task2 = new Epic(1, TaskStatus.NEW, "", "", task1.getStartTime(), Duration.ofDays(1));
+        Subtask task3 = new Subtask(2, TaskStatus.NEW, "", "", 1, task2.getStartTime(), Duration.ofDays(1));
 
-        taskManager.getTask(1);
-        assertEquals(2, taskManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется с хвоста");
+        //when
+        //then
+        historyManager.add(task1);
+        historyManager.add(task1);
+        historyManager.add(task2);
+        assertEquals(2, historyManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется с головы");
 
-        taskManager.getTask(2);
-        taskManager.getTask(1);
-        assertEquals(3, taskManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется из середины");
-    }
+        historyManager.add(task2);
+        assertEquals(2, historyManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется с хвоста");
 
-    @Test
-    @DisplayName("История пуста при отсутствии просмотров")
-    void getHistory_historyIsEmptyIfThereAreNoViews() {
-        assertTrue(taskManager.getHistory().isEmpty(), "История не пуста при отсутствии просмотров");
-    }
-
-    @Test
-    @DisplayName("Порядок задач в выводе истории соответствует порядку просмотров")
-    void getHistory_orderOfTasksInTheHistoryOutputCorrespondsToTheOrderOfViews() {
-        taskManager.getTask(0);
-        taskManager.getSubtask(5);
-        taskManager.getSubtask(5);
-        taskManager.getEpic(3);
-        taskManager.getEpic(3);
-
-        var history = taskManager.getHistory();
-
-        assertEquals(Task.class, history.get(0).getClass(), "Ожидался Task");
-        assertEquals(Subtask.class, history.get(1).getClass(), "Ожидался Subtask");
-        assertEquals(Epic.class, history.get(2).getClass(), "Ожидался Epic");
-    }
-
-    @Test
-    @DisplayName("При удалении задачи типа Task из TaskManager она так же удаляется и из истории")
-    void remove_deletingTaskFromTaskManagerDeletesTaskInTheHistoryAsWell() {
-        taskManager.getTask(0);
-        taskManager.removeTask(0);
-        assertEquals(0, taskManager.getHistory().size(), "После удаления единственной задачи, попавшей в историю история не пустеет");
-
-        taskManager.getTask(1);
-        taskManager.getTask(2);
-        taskManager.removeTask(1);
-        assertEquals(1, taskManager.getHistory().size(), "После удаления последней задачи из двух попавших в историю длина истории больше 1");
-    }
-
-    @Test
-    @DisplayName("При удалении задачи типа Subtask из TaskManager она так же удаляется и из истории")
-    void remove_deletingSubtaskFromTaskManagerDeletesTaskInTheHistoryAsWell() {
-        taskManager.getSubtask(5);
-        taskManager.removeSubtask(5);
-        assertEquals(0, taskManager.getHistory().size(), "После удаления единственной задачи, попавшей в историю история не пустеет");
-
-        taskManager.getSubtask(6);
-        taskManager.getSubtask(7);
-        taskManager.removeSubtask(7);
-        assertEquals(1, taskManager.getHistory().size(), "После удаления последней задачи из двух попавших в историю длина истории больше 1");
-    }
-
-    @Test
-    @DisplayName("При удалении задачи типа Epic из TaskManager он так же удаляется и из истории")
-    void remove_deletingEpicFromTaskManagerDeletesTaskInTheHistoryAsWell() {
-        taskManager.getEpic(3);
-        taskManager.removeEpic(3);
-        assertEquals(0, taskManager.getHistory().size(), "После удаления единственной задачи, попавшей в историю история не пустеет");
-    }
-
-    @Test
-    @DisplayName("При удалении задачи типа Epic из TaskManager он так же удаляется и из истории вместе со своими подзадачами")
-    void remove_deletingEpicFromTaskManagerDeletesTaskInTheHistoryAsWellAlongWithTheSubtasks() {
-        taskManager.getEpic(3);
-        taskManager.getSubtask(5);
-        taskManager.getSubtask(6);
-        taskManager.getSubtask(7);
-        taskManager.removeEpic(3);
-        assertNotEquals(0, taskManager.getHistory().size(), "Удаление эпика приводит к удалению не только его собственных подзадач");
-        assertEquals(1, taskManager.getHistory().size(), "После удаления эпика его подзадачи не удалились из истории");
-    }
-
-    @Test
-    @DisplayName("При удалении всех задач типа Task из TaskManager они так же удаляются и из истории")
-    void remove_whenDeleteAllTasksOfTheTaskTypeFromTheTaskManagerTheyAreAlsoDeletedFromTheHistory() {
-        taskManager.getTask(0);
-        taskManager.getTask(0);
-        taskManager.getTask(1);
-        taskManager.getSubtask(5);
-        taskManager.getEpic(3);
-
-        taskManager.removeAllTasks();
-        assertNotEquals(0, taskManager.getHistory().size(), "Удаление всех задач типа Task приводит к удалению задач всех типов из истории");
-        assertEquals(2, taskManager.getHistory().size(), "Удаление всех задач типа Task не приводит к удалению всех Task из истории");
-    }
-
-    @Test
-    @DisplayName("При удалении всех задач типа Subtask из TaskManager они так же удаляются и из истории")
-    void remove_whenDeleteAllTasksOfTheSubtaskTypeFromTheTaskManagerTheyAreAlsoDeletedFromTheHistory() {
-        taskManager.getSubtask(5);
-        taskManager.getSubtask(6);
-        taskManager.getSubtask(7);
-        taskManager.getTask(1);
-        taskManager.getTask(2);
-
-        taskManager.removeAllSubtasks();
-        assertNotEquals(0, taskManager.getHistory().size(), "Удаление всех задач типа Subtask приводит к удалению задач всех типов из истории");
-        assertEquals(2, taskManager.getHistory().size(), "Удаление всех задач типа Subtask не приводит к удалению всех Subtask из истории");
-    }
-
-    @Test
-    @DisplayName("При удалении всех задач типа Epic из TaskManager они так же удаляются и из истории")
-    void remove_whenDeleteAllTasksOfTheEpicTypeFromTheTaskManagerTheyAreAlsoDeletedFromTheHistory() {
-        taskManager.getEpic(3);
-        taskManager.getEpic(4);
-        taskManager.getTask(1);
-        taskManager.getTask(2);
-
-        taskManager.removeAllEpics();
-        assertNotEquals(0, taskManager.getHistory().size(), "Удаление всех задач типа Subtask приводит к удалению задач всех типов из истории");
-        assertEquals(2, taskManager.getHistory().size(), "Удаление всех задач типа Subtask не приводит к удалению всех Subtask из истории");
+        historyManager.add(task3);
+        historyManager.add(task2);
+        assertEquals(3, historyManager.getHistory().size(), "При повторном просмотре старая запись в истории не удаляется из середины");
     }
 }

@@ -1,11 +1,11 @@
 package service.managers.task;
 
+import exception.NotFoundException;
 import model.Epic;
 import model.Subtask;
 import model.Task;
 import model.TaskStatus;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import service.managers.Managers;
@@ -13,215 +13,379 @@ import service.managers.Managers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class FileBackedTaskManagerTest {
-    private static TaskManager taskManager;
-    private static final String testCSV = "testResources/test.csv";
+@DisplayName("FileBackedTaskManager")
+class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
+    private static final String TEST_CSV = "testResources/test.csv";
 
-    @BeforeEach
-    void setUp() {
-        taskManager = new FileBackedTaskManager(Managers.getDefaultHistory(), testCSV);
-        taskManager.createTask(new Task(TaskStatus.NEW, "task1", "task1_descr"));
-        taskManager.createTask(new Task(TaskStatus.NEW, "task2", "task2_descr"));
-        taskManager.createTask(new Task(TaskStatus.NEW, "task3", "task3_descr"));
-
-        taskManager.createEpic(new Epic("epic1", "epic1_descr"));
-        taskManager.createEpic(new Epic("epic2", "epic2_descr"));
-
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 3));
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask2", "subtask2_descr", 3));
-        taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask3", "subtask3_descr", 4));
+    @Override
+    void initTaskManager() {
+        taskManager = new FileBackedTaskManager(Managers.getDefaultHistory(), TEST_CSV);
     }
 
     @AfterEach
     void tearDown() throws IOException {
-        Files.deleteIfExists(Path.of(testCSV));
+        Files.deleteIfExists(Path.of(TEST_CSV));
     }
 
     @Test
-    @DisplayName("Состояние Задач менеджера может быть восстановлено из файла csv")
-    void loadFromFile_managerTasksStateCanBeRestoredFromCsv() {
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
-        List<Task> restoredTaskManagerTasks = restoredTaskManager.getAllTasks();
+    @DisplayName("Состояние Task может быть восстановлено из файла csv")
+    void loadFromFile_TaskStateRestoredCorrectly() {
+        //given
+        Task newTask = new Task(TaskStatus.NEW, "name", "description");
+        taskManager.createTask(newTask);
+        Task task = taskManager.getTask(0);
 
-        restoredTaskManagerTasks.forEach(restoredTask -> {
-            Task task = taskManager.getTask(restoredTask.getId());
+        //when
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Task restoredTask = restoredTaskManager.getTask(0);
 
-            assertNotNull(task, "Не удалось восстановить Задачу" + restoredTask.getId());
-            assertEquals(task.getStatus(), restoredTask.getStatus(), "Статус восстановленной задачи не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getDescription(), restoredTask.getDescription(), "Описание восстановленной задачи не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getName(), restoredTask.getName(), "Имя восстановленной задачи не совпадает с изначальной. id: " + restoredTask.getId());
-        });
+        //then
+        assertAll(
+                () -> assertNotNull(task, String.format("Не удалось восстановить %s. id: %d", "Task", restoredTask.getId())),
+                () -> assertEquals(task.getStatus(), restoredTask.getStatus(), String.format("Статус восстановленной %s не совпадает с изначальной. id: %d", "Task", restoredTask.getId())),
+                () -> assertEquals(task.getDescription(), restoredTask.getDescription(), String.format("Описание восстановленной %s не совпадает с изначальной. id: %d", "Task", restoredTask.getId())),
+                () -> assertEquals(task.getName(), restoredTask.getName(), String.format("Имя восстановленной %s не совпадает с изначальной. id: %d", "Task", restoredTask.getId())),
+                () -> assertEquals(task.getStartTime(), restoredTask.getStartTime(), String.format("Время начала восстановленной %s не совпадает с изначальной. id: %d", "Task", restoredTask.getId())),
+                () -> assertEquals(task.getDuration(), restoredTask.getDuration(), String.format("Продолжительность восстановленной %s не совпадает с изначальной. id: %d", "Task", restoredTask.getId()))
+        );
     }
 
     @Test
-    @DisplayName("Состояние Подзадач менеджера может быть восстановлено из файла csv")
-    void loadFromFile_managerSubtasksStateCanBeRestoredFromCsv() {
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
-        List<Subtask> restoredTaskManagerSubtasks = restoredTaskManager.getAllSubTasks();
+    @DisplayName("Состояние Subtask может быть восстановлено из файла csv")
+    void loadFromFile_SubtaskStateRestoredCorrectly() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
+        taskManager.createEpic(epic);
+        taskManager.createSubtask(newSubtask);
+        Subtask subtask = taskManager.getSubtask(1);
 
-        restoredTaskManagerSubtasks.forEach(restoredTask -> {
-            Subtask task = taskManager.getSubtask(restoredTask.getId());
-            assertNotNull(task, "Не удалось восстановить Подзадачу" + restoredTask.getId());
-            assertEquals(task.getStatus(), restoredTask.getStatus(), "Статус восстановленной подзадачи не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getDescription(), restoredTask.getDescription(), "Описание восстановленной подзадачи не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getName(), restoredTask.getName(), "Имя восстановленной подзадачи не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getEpicId(), restoredTask.getEpicId(), "Эпик восстановленной подзадачи не совпадает с изначальной. id: " + restoredTask.getId());
-        });
+        //when
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Subtask restoredSubtask = restoredTaskManager.getSubtask(1);
+
+        //then
+        assertAll(
+                () -> assertNotNull(subtask, String.format("Не удалось восстановить %s. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getStatus(), restoredSubtask.getStatus(), String.format("Статус восстановленной %s не совпадает с изначальной. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getDescription(), restoredSubtask.getDescription(), String.format("Описание восстановленной %s не совпадает с изначальной. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getName(), restoredSubtask.getName(), String.format("Имя восстановленной %s не совпадает с изначальной. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getStartTime(), restoredSubtask.getStartTime(), String.format("Время начала восстановленной %s не совпадает с изначальной. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getDuration(), restoredSubtask.getDuration(), String.format("Продолжительность восстановленной %s не совпадает с изначальной. id: %d", "Subtask", restoredSubtask.getId())),
+                () -> assertEquals(subtask.getEpicId(), restoredSubtask.getEpicId(), "Эпик восстановленной Subtask не совпадает с изначальным. id: " + restoredSubtask.getId())
+        );
     }
 
     @Test
-    @DisplayName("Состояние Эпиков менеджера может быть восстановлено из файла csv")
-    void loadFromFile_managerEpicsStateCanBeRestoredFromCsv() {
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
-        List<Epic> restoredTaskManagerEpics = restoredTaskManager.getAllEpics();
+    @DisplayName("Состояние Epic может быть восстановлено из файла csv")
+    void loadFromFile_EpicStateRestoredCorrectly() {
+        //given
+        Epic newEpic = new Epic("name", "description");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
+        taskManager.createEpic(newEpic);
+        taskManager.createSubtask(newSubtask);
+        Epic epic = taskManager.getEpic(0);
 
-        restoredTaskManagerEpics.forEach(restoredTask -> {
-            Epic task = taskManager.getEpic(restoredTask.getId());
+        //when
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Epic restoredEpic = restoredTaskManager.getEpic(0);
 
-            assertNotNull(task, "Не удалось восстановить Эпик" + restoredTask.getId());
-            assertEquals(task.getStatus(), restoredTask.getStatus(), "Статус восстановленного эпика не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getDescription(), restoredTask.getDescription(), "Описание восстановленного эпика не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getName(), restoredTask.getName(), "Имя восстановленного эпика не совпадает с изначальной. id: " + restoredTask.getId());
-            assertEquals(task.getSubtasksIds(), restoredTask.getSubtasksIds(), "Подзадачи восстановленного эпика не совпадает с изначальной. id: " + restoredTask.getId());
-        });
+        //then
+        assertAll(
+                () -> assertNotNull(epic, String.format("Не удалось восстановить %s. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getStatus(), restoredEpic.getStatus(), String.format("Статус восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getDescription(), restoredEpic.getDescription(), String.format("Описание восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getName(), restoredEpic.getName(), String.format("Имя восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getStartTime(), restoredEpic.getStartTime(), String.format("Время начала восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getDuration(), restoredEpic.getDuration(), String.format("Продолжительность восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
+                () -> assertEquals(epic.getSubtasksIds(), restoredEpic.getSubtasksIds(), "Подзадачи восстановленного EPIC не совпадают с изначальными. id: " + restoredEpic.getId())
+        );
     }
 
     @Test
-    @DisplayName("После удаления всех задач csv отражает актуальное состояние")
-    void removeAllTasks_afterDeletingAllTasksCsvReflectsTheCurrentState() {
+    @DisplayName("Состояние списка по приоритетам может быть восстановлено из файла")
+    void loadFromFile_RestorePrioritizedListStateFromFile() {
+        //given
+        Task task = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.now().plusDays(1), Duration.ofHours(1));
+        taskManager.createTask(task);
+        Task addedTask = taskManager.getTask(0);
+
+        Epic epic = new Epic("name", "descr");
+        taskManager.createEpic(epic);
+        Epic adedEpic = taskManager.getEpic(1);
+
+        Subtask subtask = new Subtask(TaskStatus.NEW, "name", "descr", 1, LocalDateTime.now(), Duration.ofHours(1));
+        taskManager.createSubtask(subtask);
+        Subtask addedSubtask = taskManager.getSubtask(2);
+
+        List<Task> prioritizedTasks = taskManager.getPrioritizedTasks();
+
+        //when
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+
+        //then
+        assertEquals(prioritizedTasks, restoredTaskManager.getPrioritizedTasks(), "Список по приоритетам восстанавливается из файла не корректно");
+    }
+
+    @Test
+    @DisplayName("После удаления всех Task csv отражает актуальное состояние")
+    void removeAllTasks_CsvFileIsUpdated() {
+        //given
+        Epic newEpic = new Epic("name", "description");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
+        Task newTask = new Task(TaskStatus.NEW, "name", "description");
+        taskManager.createEpic(newEpic);
+        taskManager.createSubtask(newSubtask);
+        taskManager.createTask(newTask);
+
+        //when
         taskManager.removeAllTasks();
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
 
-        assertEquals(0, restoredTaskManager.getAllTasks().size(), "Не все задачи удалены из csv");
-        assertNotEquals(0, restoredTaskManager.getAllSubTasks().size(), "При удалении всех задач из csv удалились подзадачи");
-        assertNotEquals(0, restoredTaskManager.getAllEpics().size(), "При удалении всех задач из csv удалились эпики");
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertAll(
+                () -> assertEquals(0, restoredTaskManager.getAllTasks().size(), "Не все задачи удалены из csv"),
+                () -> assertNotEquals(0, restoredTaskManager.getAllSubTasks().size(), "При удалении всех задач из csv удалились подзадачи"),
+                () -> assertNotEquals(0, restoredTaskManager.getAllEpics().size(), "При удалении всех задач из csv удалились эпики")
+        );
     }
 
     @Test
-    @DisplayName("После удаления всех подзадач csv отражает актуальное состояние")
-    void removeAllSubtasks_afterDeletingAllSubtasksCsvReflectsTheCurrentState() {
+    @DisplayName("После удаления всех Subtask csv отражает актуальное состояние")
+    void removeAllSubtasks_CsvFileIsUpdated() {
+        //given
+        Epic newEpic = new Epic("name", "description");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
+        Task newTask = new Task(TaskStatus.NEW, "name", "description");
+        taskManager.createEpic(newEpic);
+        taskManager.createSubtask(newSubtask);
+        taskManager.createTask(newTask);
+
+        //when
         taskManager.removeAllSubtasks();
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
 
-        assertEquals(0, restoredTaskManager.getAllSubTasks().size(), "Не все подзадачи удалены из csv");
-        assertNotEquals(0, restoredTaskManager.getAllTasks().size(), "При удалении всех подзадач из csv удалились задачи");
-        assertNotEquals(0, restoredTaskManager.getAllEpics().size(), "При удалении всех подзадач из csv удалились эпики");
-
-        restoredTaskManager.getAllEpics().forEach(epic -> assertEquals(0, epic.getSubtasksIds().size(), "Подзадачи не удаляются из эпиков в csv"));
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertAll(
+                () -> assertEquals(0, restoredTaskManager.getAllSubTasks().size(), "Не все подзадачи удалены из csv"),
+                () -> assertNotEquals(0, restoredTaskManager.getAllTasks().size(), "При удалении всех подзадач из csv удалились задачи"),
+                () -> assertNotEquals(0, restoredTaskManager.getAllEpics().size(), "При удалении всех подзадач из csv удалились эпики"),
+                () -> assertTrue(
+                        restoredTaskManager
+                                .getEpic(0)
+                                .getSubtasksIds()
+                                .stream()
+                                .allMatch(size -> size == 0), "Подзадачи не удаляются из эпиков в csv"
+                )
+        );
     }
 
     @Test
-    @DisplayName("После удаления всех эпиков csv отражает актуальное состояние")
-    void removeAllEpics_afterDeletingAllEpicsCsvReflectsTheCurrentState() {
-        taskManager.removeAllEpics();
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    @DisplayName("После удаления всех Epic csv отражает актуальное состояние")
+    void removeAllEpics_CsvFileIsUpdated() {
+        //given
+        Epic newEpic = new Epic("name", "description");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "name", "description", 0);
+        Task newTask = new Task(TaskStatus.NEW, "name", "description");
+        taskManager.createEpic(newEpic);
+        taskManager.createSubtask(newSubtask);
+        taskManager.createTask(newTask);
 
-        assertEquals(0, restoredTaskManager.getAllEpics().size(), "Не все эпики удалены из csv");
-        assertEquals(0, restoredTaskManager.getAllSubTasks().size(), "При удалении всех эпиков не все подзадачи удалены из csv");
-        assertNotEquals(0, restoredTaskManager.getAllTasks().size(), "При удалении всех подзадач из csv удалились задачи");
+        //when
+        taskManager.removeAllEpics();
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertAll(
+                () -> assertEquals(0, restoredTaskManager.getAllEpics().size(), "Не все эпики удалены из csv"),
+                () -> assertEquals(0, restoredTaskManager.getAllSubTasks().size(), "При удалении всех эпиков не все подзадачи удалены из csv"),
+                () -> assertNotEquals(0, restoredTaskManager.getAllTasks().size(), "При удалении всех подзадач из csv удалились задачи")
+        );
     }
 
     @Test
     @DisplayName("Созданная Задача добавляется в csv")
-    void createTask_createdTaskIsAddedToTheCsv() {
-        int newTaskId = taskManager.createTask(new Task(TaskStatus.NEW, "task3", "task3_descr")).getId();
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void createTask_CsvFileIsUpdated() {
+        //given
+        Task newTask = new Task(TaskStatus.NEW, "task", "task_descr");
 
-        assertNotNull(restoredTaskManager.getTask(newTaskId), "Новая задача не добавляется в csv");
+        //when
+        taskManager.createTask(newTask);
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertDoesNotThrow(() -> restoredTaskManager.getTask(0), "Новая задача не добавляется в csv");
     }
 
     @Test
-    @DisplayName("Созданная Подзадача добавляется в csv и в эпик в csv")
-    void createSubtask_createdSubtaskIsAddedToTheCsv() {
-        Subtask subtask = taskManager.createSubtask(new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 3));
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    @DisplayName("Созданная Подзадача добавляется в csv")
+    void createSubtask_CsvFileIsUpdated() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "subtask1", "subtask1_descr", 0);
+        taskManager.createEpic(epic);
 
-        assertNotNull(restoredTaskManager.getSubtask(subtask.getId()), "Новая подзадача не добавляется в csv");
-        assertEquals(3, restoredTaskManager.getEpic(subtask.getEpicId()).getSubtasksIds().size(), "Подзадача не добавилась в эпик в csv");
+        //when
+        taskManager.createSubtask(newSubtask);
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertDoesNotThrow(() -> restoredTaskManager.getSubtask(1), "Новая подзадача не добавляется в csv");
     }
 
     @Test
     @DisplayName("Созданный Эпик добавляется в csv")
-    void createEpic_createdEpicIsAddedToTheCsv() {
-        int newTaskId = taskManager.createEpic(new Epic("epic1", "epic1_descr")).getId();
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void createEpic_CsvFileIsUpdated() {
+        //given
+        Epic newEpic = new Epic("epic1", "epic1_descr");
 
-        assertNotNull(restoredTaskManager.getEpic(newTaskId), "Новый эпик не добавляется в csv");
+        //when
+        taskManager.createEpic(newEpic);
+
+        //then
+        Epic epic = taskManager.getEpic(0);
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertDoesNotThrow(() -> restoredTaskManager.getEpic(0), "Новый эпик не добавляется в csv");
     }
 
     @Test
     @DisplayName("Обновленная Задача обновляется в csv")
-    void updateTask_updatedTaskIsUpdatedInCsv() {
-        Task newTask = taskManager.updateTask(new Task(0, TaskStatus.DONE, "NEW_name", "NEW_description"));
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void updateTask_CsvFileIsUpdated() {
+        //given
+        Task newTask = new Task(TaskStatus.DONE, "", "");
+        taskManager.createTask(newTask);
+        Task taskUpdate = new Task(0, TaskStatus.IN_PROGRESS, "NEW_name", "NEW_description", LocalDateTime.now(), Duration.ofDays(1));
 
-        Task restoredTask = restoredTaskManager.getTask(newTask.getId());
+        //when
+        taskManager.updateTask(taskUpdate);
 
-        assertEquals(newTask.getName(), restoredTask.getName(), "Имя не обновилось в csv");
-        assertEquals(newTask.getStatus(), restoredTask.getStatus(), "Статус не обновился в csv");
-        assertEquals(newTask.getDescription(), restoredTask.getDescription(), "Описание не обновилось в csv");
+        //then
+        Task updatesTask = taskManager.getTask(0);
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Task restoredTask = restoredTaskManager.getTask(0);
+        assertAll(
+                () -> assertEquals(updatesTask.getName(), restoredTask.getName(), "Имя не обновилось в csv"),
+                () -> assertEquals(updatesTask.getStatus(), restoredTask.getStatus(), "Статус не обновился в csv"),
+                () -> assertEquals(updatesTask.getDescription(), restoredTask.getDescription(), "Описание не обновилось в csv")
+        );
     }
 
     @Test
     @DisplayName("Обновленная Подзадача обновляется в csv")
-    void updateSubtask_updatedSubtaskIsUpdatedInCsv() {
-        Subtask newTask = taskManager.updateSubtask(new Subtask(5, TaskStatus.IN_PROGRESS, "NEW_name", "NEW_description", 4));
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void updateSubtask_CsvFileIsUpdated() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask newSubtask = new Subtask(TaskStatus.NEW, "", "", 0);
+        taskManager.createEpic(epic);
+        taskManager.createSubtask(newSubtask);
+        Subtask subtaskUpdate = new Subtask(1, TaskStatus.IN_PROGRESS, "NEW_name", "NEW_description", 0, LocalDateTime.now(), Duration.ofDays(1));
 
-        Subtask restoredTask = restoredTaskManager.getSubtask(newTask.getId());
+        //when
+        taskManager.updateSubtask(subtaskUpdate);
 
-        assertEquals(newTask.getName(), restoredTask.getName(), "Имя не обновилось в csv");
-        assertEquals(newTask.getStatus(), restoredTask.getStatus(), "Статус не обновился в csv");
-        assertEquals(newTask.getDescription(), restoredTask.getDescription(), "Описание не обновилось в csv");
-        assertEquals(newTask.getEpicId(), restoredTask.getEpicId(), "Эпик подзадачи не обновился в csv");
+        //then
+        Subtask updatedSubtask = taskManager.getSubtask(1);
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Subtask restoredSubtask = restoredTaskManager.getSubtask(1);
+        assertAll(
+                () -> assertEquals(updatedSubtask.getName(), restoredSubtask.getName(), "Имя не обновилось в csv"),
+                () -> assertEquals(updatedSubtask.getStatus(), restoredSubtask.getStatus(), "Статус не обновился в csv"),
+                () -> assertEquals(updatedSubtask.getDescription(), restoredSubtask.getDescription(), "Описание не обновилось в csv"),
+                () -> assertEquals(updatedSubtask.getEpicId(), restoredSubtask.getEpicId(), "Эпик подзадачи не обновился в csv")
+        );
     }
 
     @Test
     @DisplayName("Обновленный Эпик обновляется в csv")
-    void updateEpic_updatedEpicIsUpdatedInCsv() {
-        Epic epic = new Epic("NEW_name", "NEW_description");
-        epic.setId(3);
+    void updateEpic_CsvFileIsUpdated() {
+        //given
+        Epic newEpic = new Epic("", "");
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
+        taskManager.createEpic(newEpic);
+        taskManager.createSubtask(subtask);
+        Epic epicUpdate = new Epic("NEW_name", "NEW_description");
+        epicUpdate.setId(0);
 
-        Epic newTask = taskManager.updateEpic(epic);
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+        //when
+        taskManager.updateEpic(epicUpdate);
 
-        Epic restoredTask = restoredTaskManager.getEpic(newTask.getId());
-
-        assertEquals(newTask.getName(), restoredTask.getName(), "Имя не обновилось в csv");
-        assertEquals(newTask.getDescription(), restoredTask.getDescription(), "Описание не обновилось в csv");
+        //then
+        Epic updatedEpic = taskManager.getEpic(0);
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        Epic restoredEpic = restoredTaskManager.getEpic(0);
+        assertAll(
+                () -> assertEquals(updatedEpic.getName(), restoredEpic.getName(), "Имя не обновилось в csv"),
+                () -> assertEquals(updatedEpic.getDescription(), restoredEpic.getDescription(), "Описание не обновилось в csv"),
+                () -> assertEquals(updatedEpic.getSubtasksIds(), restoredEpic.getSubtasksIds(), "Сабтаски не обновились в csv")
+        );
     }
 
     @Test
     @DisplayName("Удаленная Задача удаляется из csv")
-    void removeTask_deletedTaskIsDeletedFromCsv() {
-        taskManager.removeTask(2);
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void removeTask_CsvFileIsUpdated() {
+        //given
+        Task newTask = new Task(TaskStatus.NEW, "", "");
+        taskManager.createTask(newTask);
 
-        assertNull(restoredTaskManager.getTask(2), "Задача не удаляется из csv");
+        //when
+        taskManager.removeTask(0);
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertThrows(NotFoundException.class,
+                () -> restoredTaskManager.getTask(0),
+                "Задача не удаляется из csv");
     }
 
     @Test
-    @DisplayName("Удаленная Подзадача удаляется из csv и из эпика в csv")
-    void removeSubtask_deletedSubtaskIsDeletedFromCsv() {
-        taskManager.removeSubtask(5);
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    @DisplayName("Удаленная Подзадача удаляется из csv")
+    void removeSubtask_CsvFileIsUpdated() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
+        taskManager.createEpic(epic);
+        taskManager.createSubtask(subtask);
 
-        assertNull(restoredTaskManager.getSubtask(5), "Подзадача не удаляется из csv");
-        assertEquals(1, restoredTaskManager.getEpic(3).getSubtasksIds().size(), "Удаленная подзадача не удаляется из своего эпика в csv");
+        //when
+        taskManager.removeSubtask(1);
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertAll(
+                () -> assertThrows(NotFoundException.class,
+                        () -> restoredTaskManager.getSubtask(1),
+                        "Подзадача не удаляется из csv"),
+                () -> assertEquals(0, restoredTaskManager.getEpic(0).getSubtasksIds().size(), "Удаленная подзадача не удаляется из своего эпика в csv")
+        );
     }
 
     @Test
     @DisplayName("Удаленный Эпик удаляется из csv, как и все его подзадачи")
-    void removeEpic_deletedEpicIsDeletedFromCsv() {
-        taskManager.removeEpic(3);
-        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), testCSV);
+    void removeEpic_CsvFileIsUpdated() {
+        //given
+        Epic epic = new Epic("", "");
+        Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
+        taskManager.createEpic(epic);
+        taskManager.createSubtask(subtask);
 
-        assertNull(restoredTaskManager.getEpic(3), "Эпик не удаляется из csv");
-        assertNull(restoredTaskManager.getSubtask(5), "Подзадачи эпика не удаляются в csv");
-        assertNull(restoredTaskManager.getSubtask(6), "Подзадачи эпика не удаляются в csv");
+        //when
+        taskManager.removeEpic(0);
+
+        //then
+        TaskManager restoredTaskManager = FileBackedTaskManager.loadFromFile(Managers.getDefaultHistory(), TEST_CSV);
+        assertAll(
+                () -> assertThrows(NotFoundException.class,
+                        () -> restoredTaskManager.getEpic(0),
+                        "Эпик не удаляется из csv"),
+                () -> assertThrows(NotFoundException.class,
+                        () -> restoredTaskManager.getSubtask(1),
+                        "Не все подзадачи удаленного эпика удаляются из csv")
+        );
     }
 }
