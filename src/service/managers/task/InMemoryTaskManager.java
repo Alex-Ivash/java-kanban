@@ -1,6 +1,6 @@
 package service.managers.task;
 
-import exception.CollisionException;
+import exception.OverlappingException;
 import exception.NotFoundException;
 import model.Epic;
 import model.Subtask;
@@ -14,9 +14,9 @@ import java.util.*;
 import java.util.stream.Stream;
 
 public class InMemoryTaskManager implements TaskManager {
-    public static final LocalDateTime NULL_START_TIME_INDICATOR = LocalDateTime.MAX;
-    public static final LocalDateTime NULL_END_TIME_INDICATOR = LocalDateTime.MIN;
-    public static final Duration NULL_DURATION_INDICATOR = Duration.ZERO;
+    public static final LocalDateTime EMPTY_START_TIME_INDICATOR = LocalDateTime.MAX;
+    public static final LocalDateTime EMPTY_END_TIME_INDICATOR = LocalDateTime.MIN;
+    public static final Duration EMPTY_DURATION_INDICATOR = Duration.ZERO;
     protected int seq = -1;
     protected final Map<Integer, Task> tasks = new HashMap<>();
     protected final Map<Integer, Subtask> subtasks = new HashMap<>();
@@ -112,8 +112,8 @@ public class InMemoryTaskManager implements TaskManager {
         }
 
         newTask.setId(getNextId());
-        applyNullIndicatorStartTimeAndDurationIfMissing(newTask);
-        validateCollision(newTask);
+        applyEmptyIndicatorStartTimeAndDurationIfMissing(newTask);
+        validateTimeOverlap(newTask);
         tasks.put(newTask.getId(), newTask);
         prioritizedTasks.add(newTask);
 
@@ -129,10 +129,10 @@ public class InMemoryTaskManager implements TaskManager {
 
         newSubtask.setId(getNextId());
 
-        applyNullIndicatorStartTimeAndDurationIfMissing(newSubtask);
-        validateCollision(newSubtask);
+        applyEmptyIndicatorStartTimeAndDurationIfMissing(newSubtask);
+        validateTimeOverlap(newSubtask);
 
-        int subtaskEpicId = newSubtask.getEpicId(); // тут бы еще влепить проверку на null в id эпика, наверное, хоть и нельзя его не задать, так как он есть в конструкторе
+        int subtaskEpicId = newSubtask.getEpicId();
         Epic subtaskEpic = (Epic) getNotNullValue(epics.get(subtaskEpicId), subtaskEpicId);
         subtaskEpic.addSubtask(newSubtask.getId());
 
@@ -151,7 +151,7 @@ public class InMemoryTaskManager implements TaskManager {
 
         newEpic.setId(getNextId());
 
-        applyNullIndicatorStartTimeAndDurationIfMissing(newEpic);
+        applyEmptyIndicatorStartTimeAndDurationIfMissing(newEpic);
 
         epics.put(newEpic.getId(), newEpic);
         calculateEpicState(newEpic);
@@ -169,10 +169,10 @@ public class InMemoryTaskManager implements TaskManager {
         int id = newTask.getId();
         Task oldTask = getNotNullValue(tasks.get(id), id);
 
-        applyNullIndicatorStartTimeAndDurationIfMissing(newTask);
+        applyEmptyIndicatorStartTimeAndDurationIfMissing(newTask);
 
         if (isStartTimeOrDurationChanged(oldTask, newTask)) {
-            validateCollision(newTask);
+            validateTimeOverlap(newTask);
         }
 
         tasks.put(newTask.getId(), newTask);
@@ -191,10 +191,10 @@ public class InMemoryTaskManager implements TaskManager {
         int id = newSubtask.getId();
         Subtask oldSubtask = (Subtask) getNotNullValue(subtasks.get(id), id);
 
-        applyNullIndicatorStartTimeAndDurationIfMissing(newSubtask);
+        applyEmptyIndicatorStartTimeAndDurationIfMissing(newSubtask);
 
         if (isStartTimeOrDurationChanged(oldSubtask, newSubtask)) {
-            validateCollision(newSubtask);
+            validateTimeOverlap(newSubtask);
         }
 
         int newSubtaskEpicId = newSubtask.getEpicId();
@@ -285,7 +285,9 @@ public class InMemoryTaskManager implements TaskManager {
 
     @Override
     public List<Subtask> getEpicSubtasks(int id) {
-        return epics.get(id)
+        Epic epic = (Epic)getNotNullValue(epics.get(id), id);
+
+        return epic
                 .getSubtasksIds()
                 .stream()
                 .map(subtasks::get)
@@ -301,33 +303,33 @@ public class InMemoryTaskManager implements TaskManager {
         return new ArrayList<>(prioritizedTasks);
     }
 
-    private void validateCollision(final Task checkedTask) {
+    private void validateTimeOverlap(final Task checkedTask) {
         if (isDefaultStartTime(checkedTask)) {
             return;
         }
 
-        Task lower = prioritizedTasks.floor(checkedTask);
-        Task upper = prioritizedTasks.ceiling(checkedTask);
+        Task lower = prioritizedTasks.lower(checkedTask);
+        Task upper = prioritizedTasks.higher(checkedTask);
 
         Stream.of(lower, upper)
                 .filter(Objects::nonNull)
-                .filter(neighbour -> isCollision(neighbour, checkedTask))
+                .filter(neighbour -> isTimeOverlapping(neighbour, checkedTask))
                 .findAny()
                 .ifPresent(overlappingNeighbor -> {
-                    throw new CollisionException(String.format("The execution interval of the added task collisions with the existing tasks with id %d", overlappingNeighbor.getId()));
+                    throw new OverlappingException(String.format("The execution interval of the added task overlapping with the existing tasks with id %d", overlappingNeighbor.getId()));
                 });
     }
 
-    private boolean isCollision(Task lower, Task upper) {
+    private boolean isTimeOverlapping(Task lower, Task upper) {
         return lower.getStartTime().isBefore(upper.getEndTime())
                 && upper.getStartTime().isBefore(lower.getEndTime());
     }
 
-    private void calculateEpicState(Epic epic) {
+    protected void calculateEpicState(Epic epic) {
         List<Subtask> epicsSubtasks = getEpicSubtasks(epic.getId());
-        Duration newDuration = NULL_DURATION_INDICATOR;
-        LocalDateTime newStartTime = NULL_START_TIME_INDICATOR;
-        LocalDateTime newEndTime = NULL_END_TIME_INDICATOR;
+        Duration newDuration = EMPTY_DURATION_INDICATOR;
+        LocalDateTime newStartTime = EMPTY_START_TIME_INDICATOR;
+        LocalDateTime newEndTime = EMPTY_END_TIME_INDICATOR;
         TaskStatus newStatus = epicsSubtasks.isEmpty() ? TaskStatus.NEW : epicsSubtasks.getFirst().getStatus();
 
         for (Subtask epicSubtask : epicsSubtasks) {
@@ -367,7 +369,7 @@ public class InMemoryTaskManager implements TaskManager {
     }
 
     private boolean isDefaultStartTime(Task task) {
-        return task.getStartTime().equals(NULL_START_TIME_INDICATOR);
+        return task.getStartTime().equals(EMPTY_START_TIME_INDICATOR);
     }
 
     private boolean isStartTimeOrDurationChanged(Task originalTask, Task updatedTask) {
@@ -376,18 +378,18 @@ public class InMemoryTaskManager implements TaskManager {
 
     }
 
-    private void applyNullIndicatorStartTimeAndDurationIfMissing(Task task) {
+    private void applyEmptyIndicatorStartTimeAndDurationIfMissing(Task task) {
         if (task.getStartTime() == null || task.getDuration() == null) {
-            task.setStartTime(NULL_START_TIME_INDICATOR);
-            task.setDuration(NULL_DURATION_INDICATOR);
+            task.setStartTime(EMPTY_START_TIME_INDICATOR);
+            task.setDuration(EMPTY_DURATION_INDICATOR);
         }
     }
 
-    private void applyNullIndicatorStartTimeAndDurationIfMissing(Epic epic) {
+    private void applyEmptyIndicatorStartTimeAndDurationIfMissing(Epic epic) {
         if (epic.getStartTime() == null || epic.getDuration() == null) {
-            epic.setStartTime(NULL_START_TIME_INDICATOR);
-            epic.setDuration(NULL_DURATION_INDICATOR);
-            epic.setEndTime(NULL_END_TIME_INDICATOR);
+            epic.setStartTime(EMPTY_START_TIME_INDICATOR);
+            epic.setDuration(EMPTY_DURATION_INDICATOR);
+            epic.setEndTime(EMPTY_END_TIME_INDICATOR);
         }
     }
 

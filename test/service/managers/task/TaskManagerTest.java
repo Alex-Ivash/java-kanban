@@ -1,6 +1,6 @@
 package service.managers.task;
 
-import exception.CollisionException;
+import exception.OverlappingException;
 import exception.NotFoundException;
 import model.Epic;
 import model.Subtask;
@@ -247,19 +247,19 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При передаче null в аргумент метода создания Task будет выброшено IllegalArgumentException")
-    void createTask_1() {
+    void createTask_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.createTask(null), "Исключение не выброшено");
     }
 
     @Test
     @DisplayName("При передаче null в аргумент метода создания Subtask будет выброшено IllegalArgumentException")
-    void createSubtask_1() {
+    void createSubtask_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.createSubtask(null), "Исключение не выброшено");
     }
 
     @Test
     @DisplayName("При передаче null в аргумент метода создания Epic будет выброшено IllegalArgumentException")
-    void createEpic_1() {
+    void createEpic_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.createEpic(null), "Исключение не выброшено");
     }
 
@@ -337,9 +337,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
                 () -> assertEquals(epicName, addedEpic.getName(), "Имя добавляемой и добавленной задачи изменился при добавлении"),
                 () -> assertEquals(epicDescription, addedEpic.getDescription(), "Описание добавляемой и добавленной задачи изменился при добавлении"),
                 () -> assertTrue(addedEpic.getSubtasksIds().isEmpty(), "Список подзадач у добавляемого и добавленного эпика изменился при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.NULL_START_TIME_INDICATOR, addedEpic.getStartTime(), "Время старта добавляемого и добавленного эпика изменилось при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.NULL_END_TIME_INDICATOR, addedEpic.getEndTime(), "Время окончания добавляемого и добавленного эпика изменилось при добавлении"),
-                () -> assertEquals(InMemoryTaskManager.NULL_DURATION_INDICATOR, addedEpic.getDuration(), "Длительность добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.EMPTY_START_TIME_INDICATOR, addedEpic.getStartTime(), "Время старта добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.EMPTY_END_TIME_INDICATOR, addedEpic.getEndTime(), "Время окончания добавляемого и добавленного эпика изменилось при добавлении"),
+                () -> assertEquals(InMemoryTaskManager.EMPTY_DURATION_INDICATOR, addedEpic.getDuration(), "Длительность добавляемого и добавленного эпика изменилось при добавлении"),
                 () -> assertEquals(TaskStatus.NEW, addedEpic.getStatus(), "Статус добавляемого и добавленного эпика изменился при добавлении")
         );
     }
@@ -449,7 +449,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При создании Subtask, эпик которой не существует выбрасывается NotFoundException")
-    void createSubtask_() {
+    void createSubtask_NonexistentEpic_NotFoundExceptionThrown() {
         //given
         Epic epic = new Epic("", "");
         taskManager.createEpic(epic);
@@ -514,7 +514,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    @DisplayName("При создании Task со сроком исполнения пересекающимся с началом срока исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Task со сроком исполнения пересекающимся с началом срока исполнения существующей задачи выбрасывается OverlappingException")
     void createTask_ThrownCollisionException_TimeCollisionWithExistingStartTime() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.parse("2024-06-19T07:00:00"), Duration.ofHours(24));
@@ -524,11 +524,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createTask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Subtask со сроком исполнения пересекающимся с началом срока исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Subtask со сроком исполнения пересекающимся с началом срока исполнения существующей задачи выбрасывается OverlappingException")
     void createSubtask_ThrownCollisionException_TimeCollisionWithExistingStartTime() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -540,11 +540,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Task со сроком исполнения с полным совпадением со сроком исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Task со сроком исполнения с полным совпадением со сроком исполнения существующей задачи выбрасывается OverlappingException")
     void createTask_ThrownCollisionException_ExactDurationMatch() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.parse("2024-05-19T10:00:00"), Duration.ofHours(24));
@@ -554,11 +554,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createTask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Subtask со сроком исполнения с полным совпадением со сроком исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Subtask со сроком исполнения с полным совпадением со сроком исполнения существующей задачи выбрасывается OverlappingException")
     void createSubtask_ThrownCollisionException_ExactDurationMatch() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -570,11 +570,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Task со сроком исполнения, входящем в интервал существующей задачи с несовпадением по границам выбрасывается CollisionException")
+    @DisplayName("При создании Task со сроком исполнения, входящем в интервал существующей задачи с несовпадением по границам выбрасывается OverlappingException")
     void createTask_ThrownCollisionException_DurationWithinIntervalWithMismatchedBoundaries() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.parse("2024-04-19T05:00:00"), Duration.ofHours(24));
@@ -584,11 +584,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createTask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Subtask со сроком исполнения, входящем в интервал существующей задачи с несовпадением по границам выбрасывается CollisionException")
+    @DisplayName("При создании Subtask со сроком исполнения, входящем в интервал существующей задачи с несовпадением по границам выбрасывается OverlappingException")
     void createSubtask_ThrownCollisionException_DurationWithinIntervalWithMismatchedBoundaries() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -600,11 +600,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Task со сроком исполнения пересекающимся с концом срока исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Task со сроком исполнения пересекающимся с концом срока исполнения существующей задачи выбрасывается OverlappingException")
     void createTask_ThrownCollisionException_TimeCollisionWithExistingEndTime() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.parse("2024-03-19T05:00:00"), Duration.ofHours(2));
@@ -614,11 +614,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createTask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createTask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При создании Subtask со сроком исполнения пересекающимся с концом срока исполнения существующей задачи выбрасывается CollisionException")
+    @DisplayName("При создании Subtask со сроком исполнения пересекающимся с концом срока исполнения существующей задачи выбрасывается OverlappingException")
     void createSubtask_ThrownCollisionException_TimeCollisionWithExistingEndTime() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -630,11 +630,11 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(task1);
 
         //then
-        assertThrows(CollisionException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
+        assertThrows(OverlappingException.class, () -> taskManager.createSubtask(task2), "Исключение не выброшено");
     }
 
     @Test
-    @DisplayName("При обновлении времени начала Task и пересечении нового срока с существующими задачами выбрасывается CollisionException")
+    @DisplayName("При обновлении времени начала Task и пересечении нового срока с существующими задачами выбрасывается OverlappingException")
     void updateTask_ThrownCollisionException_TimeCollisionWithExistingTasks() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.now(), Duration.ofHours(1));
@@ -649,7 +649,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         //when
         //then
         assertAll(
-                () -> assertThrows(CollisionException.class, () -> taskManager.updateTask(newTask2), "Исключение не выброшено"),
+                () -> assertThrows(OverlappingException.class, () -> taskManager.updateTask(newTask2), "Исключение не выброшено"),
                 () -> assertAll("Task обновился",
                         () -> assertEquals(task2.getName(), controlTask.getName()),
                         () -> assertEquals(task2.getDescription(), controlTask.getDescription()),
@@ -661,7 +661,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    @DisplayName("При обновлении длительности Task и пересечении нового срока с существующими задачами выбрасывается CollisionException")
+    @DisplayName("При обновлении длительности Task и пересечении нового срока с существующими задачами выбрасывается OverlappingException")
     void updateTask_ThrownCollisionException_TimeCollisionWithExistingTasksWithDurationChange() {
         //given
         Task task1 = new Task(TaskStatus.NEW, "name", "descr", LocalDateTime.now(), Duration.ofHours(1));
@@ -676,7 +676,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         //when
         //then
         assertAll(
-                () -> assertThrows(CollisionException.class, () -> taskManager.updateTask(newTask1), "Исключение не выброшено"),
+                () -> assertThrows(OverlappingException.class, () -> taskManager.updateTask(newTask1), "Исключение не выброшено"),
                 () -> assertAll("Task обновился",
                         () -> assertEquals(task1.getName(), controlTask.getName()),
                         () -> assertEquals(task1.getDescription(), controlTask.getDescription()),
@@ -688,7 +688,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    @DisplayName("При обновлении времени начала исполнения Subtask и пересечении нового срока с существующими задачами выбрасывается CollisionException")
+    @DisplayName("При обновлении времени начала исполнения Subtask и пересечении нового срока с существующими задачами выбрасывается OverlappingException")
     void updateSubtask_ThrownCollisionException_TimeCollisionWithExistingTasks() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -705,7 +705,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         //when
         //then
         assertAll(
-                () -> assertThrows(CollisionException.class, () -> taskManager.updateSubtask(newSubtask2), "Исключение не выброшено"),
+                () -> assertThrows(OverlappingException.class, () -> taskManager.updateSubtask(newSubtask2), "Исключение не выброшено"),
                 () -> assertAll("Task обновился",
                         () -> assertEquals(subtask2.getName(), controlSubtask.getName()),
                         () -> assertEquals(subtask2.getDescription(), controlSubtask.getDescription()),
@@ -718,7 +718,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
     }
 
     @Test
-    @DisplayName("При обновлении длительности Subtask и пересечении нового срока с существующими задачами выбрасывается CollisionException")
+    @DisplayName("При обновлении длительности Subtask и пересечении нового срока с существующими задачами выбрасывается OverlappingException")
     void updateSubtask_ThrownCollisionException_TimeCollisionWithExistingTasksWithDurationChange() {
         //given
         Epic epic = new Epic("epic_name", "epic_descr");
@@ -735,7 +735,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
         //when
         //then
         assertAll(
-                () -> assertThrows(CollisionException.class, () -> taskManager.updateSubtask(newSubtask1), "Исключение не выброшено"),
+                () -> assertThrows(OverlappingException.class, () -> taskManager.updateSubtask(newSubtask1), "Исключение не выброшено"),
                 () -> assertAll("Task обновился",
                         () -> assertEquals(subtask1.getName(), controlSubtask.getName()),
                         () -> assertEquals(subtask1.getDescription(), controlSubtask.getDescription()),
@@ -918,7 +918,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При попытке обновления несуществующего Task выбрасывается NotFoundException")
-    void updateTask_() {
+    void updateTask_NonexistentTask_NotFoundExceptionThrown() {
         //given
         Task task = new Task(TaskStatus.NEW, "", "");
         task.setId(0);
@@ -930,7 +930,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При попытке обновления несуществующего Subtask выбрасывается NotFoundException")
-    void updateSubtask_() {
+    void updateSubtask_NonexistentSubtask_NotFoundExceptionThrown() {
         //given
         Epic epic = new Epic("", "");
         taskManager.createEpic(epic);
@@ -944,7 +944,7 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При попытке обновления несуществующего Epic выбрасывается NotFoundException")
-    void updateEpic_() {
+    void updateEpic_NonexistentEpic_NotFoundExceptionThrown() {
         //given
         Epic epic = new Epic("", "");
         epic.setId(0);
@@ -956,25 +956,25 @@ abstract class TaskManagerTest<T extends TaskManager> {
 
     @Test
     @DisplayName("При передаче null в аргумент метода обновления Task будет выброшено IllegalArgumentException")
-    void updateTask_1() {
+    void updateTask_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.updateTask(null), "Исключение не выброшено");
     }
 
     @Test
     @DisplayName("При передаче null в аргумент метода обновления Subtask будет выброшено IllegalArgumentException")
-    void updateSubtask_1() {
+    void updateSubtask_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.updateSubtask(null), "Исключение не выброшено");
     }
 
     @Test
     @DisplayName("При передаче null в аргумент метода обновления Epic будет выброшено IllegalArgumentException")
-    void updateEpic_1() {
+    void updateEpic_NullArgument_IllegalArgumentExceptionThrown() {
         assertThrows(IllegalArgumentException.class, () -> taskManager.updateEpic(null), "Исключение не выброшено");
     }
 
     @Test
     @DisplayName("При обновлении эпика, которому принадлежит Subtask на не существующий выбрасывается NotFoundException")
-    void updateSubtask_2() {
+    void updateSubtask_NonexistentEpic_NotFoundExceptionThrown() {
         //given
         Epic epic = new Epic("", "");
         Subtask subtask = new Subtask(TaskStatus.NEW, "", "", 0);
@@ -1250,9 +1250,9 @@ abstract class TaskManagerTest<T extends TaskManager> {
         taskManager.createSubtask(subtask2);
 
         TaskStatus newEpicTaskStatus = TaskStatus.NEW;
-        LocalDateTime newEpicStartTime = InMemoryTaskManager.NULL_START_TIME_INDICATOR;
-        LocalDateTime newEpicEndTime = InMemoryTaskManager.NULL_END_TIME_INDICATOR;
-        Duration newEpicDuration = InMemoryTaskManager.NULL_DURATION_INDICATOR;
+        LocalDateTime newEpicStartTime = InMemoryTaskManager.EMPTY_START_TIME_INDICATOR;
+        LocalDateTime newEpicEndTime = InMemoryTaskManager.EMPTY_END_TIME_INDICATOR;
+        Duration newEpicDuration = InMemoryTaskManager.EMPTY_DURATION_INDICATOR;
 
         //when
         taskManager.removeAllSubtasks();

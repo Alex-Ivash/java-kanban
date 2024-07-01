@@ -11,8 +11,6 @@ import org.junit.jupiter.api.Test;
 import service.managers.Managers;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,7 +28,7 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
 
     @AfterEach
     void tearDown() throws IOException {
-        Files.deleteIfExists(Path.of(TEST_CSV));
+//        Files.deleteIfExists(Path.of(TEST_CSV));
     }
 
     @Test
@@ -104,7 +102,8 @@ class FileBackedTaskManagerTest extends TaskManagerTest<FileBackedTaskManager> {
                 () -> assertEquals(epic.getName(), restoredEpic.getName(), String.format("Имя восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
                 () -> assertEquals(epic.getStartTime(), restoredEpic.getStartTime(), String.format("Время начала восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
                 () -> assertEquals(epic.getDuration(), restoredEpic.getDuration(), String.format("Продолжительность восстановленной %s не совпадает с изначальной. id: %d", "Epic", restoredEpic.getId())),
-                () -> assertEquals(epic.getSubtasksIds(), restoredEpic.getSubtasksIds(), "Подзадачи восстановленного EPIC не совпадают с изначальными. id: " + restoredEpic.getId())
+                () -> assertEquals(epic.getSubtasksIds(), restoredEpic.getSubtasksIds(), "Подзадачи восстановленного EPIC не совпадают с изначальными. id: " + restoredEpic.getId()),
+                () -> assertEquals(epic.getEndTime(), restoredEpic.getEndTime(), "Время окончания восстановленного EPIC не совпадает с изначальным. id: " + restoredEpic.getId())
         );
     }
 
