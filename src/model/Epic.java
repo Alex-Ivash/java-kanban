@@ -45,6 +45,6 @@ public class Epic extends Task {
 
     @Override
     public String toString() {
-        return super.toString().replaceFirst("}$", ", subtasks=" + subtasksIds + "}");
+        return super.toString().replaceFirst("}$", ", endTime=" + endTime + ", subtasks=" + subtasksIds + "}");
     }
 }

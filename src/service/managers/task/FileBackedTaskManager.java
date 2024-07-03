@@ -17,7 +17,7 @@ import java.util.List;
 
 public class FileBackedTaskManager extends InMemoryTaskManager {
     private Path storageCSV;
-    private static final String DEFAULT_CSV_FILE = "resources/tasks.csv";
+    public static final String DEFAULT_CSV_FILE = "resources/tasks.csv";
 
     public FileBackedTaskManager(HistoryManager historyManager, String file) {
         super(historyManager);
@@ -60,6 +60,7 @@ public class FileBackedTaskManager extends InMemoryTaskManager {
                     });
 
             subtasks.forEach((subtaskId, subtask) -> epics.get(subtask.getEpicId()).addSubtask(subtaskId));
+            epics.forEach((epicId, epic) -> calculateEpicState(epic)); // Оказалось, что у меня не восстанавливалось время окончания эпика. И это все ради восстановления времени окончания эпика. Наверное стоит просто хранить его в csv
         } catch (IOException e) {
             throw new ManagerLoadException(e.getMessage());
         }
